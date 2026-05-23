@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ptmj.datum.mapper.PtmjSecurityMapper">
+
+    <resultMap type="PtmjSecurity" id="PtmjSecurityResult">
+        <result property="id"    column="id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="question"    column="question"    />
+        <result property="answer"    column="answer"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectPtmjSecurityVo">
+        select id, user_id, question, answer, create_by, create_time, update_by, update_time, remark from ptmj_security
+    </sql>
+
+    <select id="selectPtmjSecurityList" parameterType="PtmjSecurity" resultMap="PtmjSecurityResult">
+        <include refid="selectPtmjSecurityVo"/>
+        <where>
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="question != null  and question != ''"> and question = #{question}</if>
+            <if test="answer != null  and answer != ''"> and answer = #{answer}</if>
+        </where>
+    </select>
+
+    <select id="selectPtmjSecurityById" parameterType="Long" resultMap="PtmjSecurityResult">
+        <include refid="selectPtmjSecurityVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertPtmjSecurity" parameterType="PtmjSecurity" useGeneratedKeys="true" keyProperty="id">
+        insert into ptmj_security
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="question != null and question != ''">question,</if>
+            <if test="answer != null and answer != ''">answer,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="question != null and question != ''">#{question},</if>
+            <if test="answer != null and answer != ''">#{answer},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <select id="selectByUserIdAndQuestionNo" resultMap="PtmjSecurityResult">
+        select id, user_id, question, answer, create_by, create_time, update_by, update_time, remark
+        from ptmj_security
+        where user_id = #{userId}
+          and (question = #{questionNo}
+               or (#{questionNo} = '1' and question = '你的专业是什么')
+               or (#{questionNo} = '2' and question = '你的母亲姓什么')
+               or (#{questionNo} = '3' and question = '你的父亲姓什么'))
+        limit 1
+    </select>
+
+    <update id="updateAnswerByUserIdAndQuestionNo">
+        update ptmj_security
+        set answer = #{answer}, update_by = #{updateBy}, update_time = now()
+        where user_id = #{userId}
+          and (question = #{questionNo}
+               or (#{questionNo} = '1' and question = '你的专业是什么')
+               or (#{questionNo} = '2' and question = '你的母亲姓什么')
+               or (#{questionNo} = '3' and question = '你的父亲姓什么'))
+    </update>
+
+    <update id="updatePtmjSecurity" parameterType="PtmjSecurity">
+        update ptmj_security
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="question != null and question != ''">question = #{question},</if>
+            <if test="answer != null and answer != ''">answer = #{answer},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deletePtmjSecurityById" parameterType="Long">
+        delete from ptmj_security where id = #{id}
+    </delete>
+
+    <delete id="deletePtmjSecurityByIds" parameterType="String">
+        delete from ptmj_security where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!--
+ * 根据用户名查询用户（用于注册时校验用户名是否已存在）
+ * @author sxm
+ * @date 2026-04-08
+-->
+    <select id="selectPtmjUserByUserName" parameterType="String" resultType="com.ptmj.datum.domain.PtmjUser">
+        select user_id, user_name, password, avatar, count, status, creat_by, create_time, update_by, update_time, remark from ptmj_user
+        where user_name = #{userName}
+    </select>
+</mapper>

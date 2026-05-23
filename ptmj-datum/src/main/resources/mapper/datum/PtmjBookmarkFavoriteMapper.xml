@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ptmj.datum.mapper.PtmjBookmarkFavoriteMapper">
+
+    <resultMap type="PtmjBookmarkFavorite" id="PtmjBookmarkFavoriteResult">
+        <result property="bookmarkId" column="bookmark_id"/>
+        <result property="userId" column="user_id"/>
+    </resultMap>
+
+    <resultMap type="PtmjBookmark" id="FavoriteBookmarkResult">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="url" column="url"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="subject" column="subject"/>
+        <result property="resourceType" column="resource_type"/>
+        <result property="collection" column="collection"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <select id="selectPtmjBookmarkFavoriteList" parameterType="PtmjBookmarkFavorite" resultMap="PtmjBookmarkFavoriteResult">
+        select bookmark_id, user_id
+        from ptmj_bookmark_favorite
+        <where>
+            <if test="bookmarkId != null"> and bookmark_id = #{bookmarkId}</if>
+            <if test="userId != null"> and user_id = #{userId}</if>
+        </where>
+    </select>
+
+    <select id="selectFavoriteBookmarkList" parameterType="Long" resultMap="FavoriteBookmarkResult">
+        select b.id, b.user_id, b.url, b.title, b.description, b.cover_image, b.subject, b.resource_type, b.collection,
+               b.status, b.del_flag, b.create_by, b.create_time, b.update_by, b.update_time, b.remark
+        from ptmj_bookmark_favorite f
+        inner join ptmj_bookmark b on b.id = f.bookmark_id
+        where f.user_id = #{userId}
+          and b.del_flag = 0
+        order by b.create_time desc
+    </select>
+
+    <insert id="insertPtmjBookmarkFavorite" parameterType="PtmjBookmarkFavorite">
+        insert ignore into ptmj_bookmark_favorite (bookmark_id, user_id)
+        values (#{bookmarkId}, #{userId})
+    </insert>
+
+    <delete id="deleteByUserIdAndBookmarkId">
+        delete from ptmj_bookmark_favorite where user_id = #{userId} and bookmark_id = #{bookmarkId}
+    </delete>
+
+    <select id="countByUserId" resultType="long">
+        select count(1) from ptmj_bookmark_favorite where user_id = #{userId}
+    </select>
+</mapper>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ptmj.datum.mapper.PtmjFileDownloadMapper">
+
+    <resultMap type="PtmjFileDownload" id="PtmjFileDownloadResult">
+        <result property="downloadId"    column="download_id"    />
+        <result property="fileId"    column="file_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="creatBy"    column="creat_by"    />
+        <result property="creatTime"    column="creat_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectPtmjFileDownloadVo">
+        select download_id, file_id, user_id, creat_by, creat_time, update_by, update_time, remark from ptmj_file_download
+    </sql>
+
+    <select id="selectPtmjFileDownloadList" parameterType="PtmjFileDownload" resultMap="PtmjFileDownloadResult">
+        <include refid="selectPtmjFileDownloadVo"/>
+        <where>
+            <if test="creatBy != null  and creatBy != ''"> and creat_by = #{creatBy}</if>
+            <if test="creatTime != null "> and creat_time = #{creatTime}</if>
+        </where>
+    </select>
+
+    <select id="selectPtmjFileDownloadByDownloadId" parameterType="Long" resultMap="PtmjFileDownloadResult">
+        <include refid="selectPtmjFileDownloadVo"/>
+        where download_id = #{downloadId}
+    </select>
+
+    <insert id="insertPtmjFileDownload" parameterType="PtmjFileDownload" useGeneratedKeys="true" keyProperty="downloadId">
+        insert into ptmj_file_download
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="fileId != null">file_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="creatBy != null">creat_by,</if>
+            <if test="creatTime != null">creat_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="fileId != null">#{fileId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="creatBy != null">#{creatBy},</if>
+            <if test="creatTime != null">#{creatTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePtmjFileDownload" parameterType="PtmjFileDownload">
+        update ptmj_file_download
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="fileId != null">file_id = #{fileId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="creatBy != null">creat_by = #{creatBy},</if>
+            <if test="creatTime != null">creat_time = #{creatTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where download_id = #{downloadId}
+    </update>
+
+    <delete id="deletePtmjFileDownloadByDownloadId" parameterType="Long">
+        delete from ptmj_file_download where download_id = #{downloadId}
+    </delete>
+
+    <delete id="deletePtmjFileDownloadByDownloadIds" parameterType="String">
+        delete from ptmj_file_download where download_id in
+        <foreach item="downloadId" collection="array" open="(" separator="," close=")">
+            #{downloadId}
+        </foreach>
+    </delete>
+
+    <select id="countVisibleByUserId" resultType="long">
+        select count(1) from ptmj_file_download
+        where user_id = #{userId}
+        and (remark is null or remark != '0')
+    </select>
+</mapper>

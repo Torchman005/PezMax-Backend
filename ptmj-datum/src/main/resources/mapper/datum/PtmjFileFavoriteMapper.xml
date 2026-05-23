@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ptmj.datum.mapper.PtmjFileFavoriteMapper">
+
+    <resultMap type="PtmjFileFavorite" id="PtmjFileFavoriteResult">
+        <result property="fileId"    column="file_id"    />
+        <result property="userId"    column="user_id"    />
+    </resultMap>
+
+    <sql id="selectPtmjFileFavoriteVo">
+        select file_id, user_id from ptmj_file_favorite
+    </sql>
+
+    <select id="selectPtmjFileFavoriteList" parameterType="PtmjFileFavorite" resultMap="PtmjFileFavoriteResult">
+        <include refid="selectPtmjFileFavoriteVo"/>
+        <where>
+        </where>
+    </select>
+
+    <select id="selectPtmjFileFavoriteByFileId" parameterType="Long" resultMap="PtmjFileFavoriteResult">
+        <include refid="selectPtmjFileFavoriteVo"/>
+        where file_id = #{fileId}
+    </select>
+
+    <insert id="insertPtmjFileFavorite" parameterType="PtmjFileFavorite">
+        insert into ptmj_file_favorite
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="fileId != null">file_id,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="fileId != null">#{fileId},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePtmjFileFavorite" parameterType="PtmjFileFavorite">
+        update ptmj_file_favorite
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where file_id = #{fileId}
+    </update>
+
+    <delete id="deletePtmjFileFavoriteByFileId" parameterType="Long">
+        delete from ptmj_file_favorite where file_id = #{fileId}
+    </delete>
+
+    <delete id="deletePtmjFileFavoriteByFileIds" parameterType="String">
+        delete from ptmj_file_favorite where file_id in
+        <foreach item="fileId" collection="array" open="(" separator="," close=")">
+            #{fileId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteByUserIdAndFileId">
+        delete from ptmj_file_favorite where user_id = #{userId} and file_id = #{fileId}
+    </delete>
+
+    <select id="countByUserId" resultType="long">
+        select count(1) from ptmj_file_favorite where user_id = #{userId}
+    </select>
+</mapper>

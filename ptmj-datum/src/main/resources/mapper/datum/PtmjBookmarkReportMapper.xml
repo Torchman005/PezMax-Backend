@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ptmj.datum.mapper.PtmjBookmarkReportMapper">
+
+    <resultMap type="PtmjBookmarkReport" id="PtmjBookmarkReportResult">
+        <result property="reportId"    column="report_id"    />
+        <result property="bookmarkId"    column="bookmark_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="reason"    column="reason"    />
+        <result property="result"    column="result"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectPtmjBookmarkReportVo">
+        select report_id, bookmark_id, user_id, reason, result, create_by, create_time, update_by, update_time, remark from ptmj_bookmark_report
+    </sql>
+
+    <select id="selectPtmjBookmarkReportList" parameterType="PtmjBookmarkReport" resultMap="PtmjBookmarkReportResult">
+        <include refid="selectPtmjBookmarkReportVo"/>
+        <where>
+            <if test="bookmarkId != null "> and bookmark_id = #{bookmarkId}</if>
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="reason != null  and reason != ''"> and reason = #{reason}</if>
+            <if test="result != null  and result != ''"> and result = #{result}</if>
+        </where>
+    </select>
+
+    <select id="selectPtmjBookmarkReportByReportId" parameterType="Long" resultMap="PtmjBookmarkReportResult">
+        <include refid="selectPtmjBookmarkReportVo"/>
+        where report_id = #{reportId}
+    </select>
+
+    <insert id="insertPtmjBookmarkReport" parameterType="PtmjBookmarkReport" useGeneratedKeys="true" keyProperty="reportId">
+        insert into ptmj_bookmark_report
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="bookmarkId != null">bookmark_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="reason != null and reason != ''">reason,</if>
+            <if test="result != null">result,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="bookmarkId != null">#{bookmarkId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="reason != null and reason != ''">#{reason},</if>
+            <if test="result != null">#{result},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePtmjBookmarkReport" parameterType="PtmjBookmarkReport">
+        update ptmj_bookmark_report
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="bookmarkId != null">bookmark_id = #{bookmarkId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="reason != null and reason != ''">reason = #{reason},</if>
+            <if test="result != null">result = #{result},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where report_id = #{reportId}
+    </update>
+
+    <delete id="deletePtmjBookmarkReportByReportId" parameterType="Long">
+        delete from ptmj_bookmark_report where report_id = #{reportId}
+    </delete>
+
+    <delete id="deletePtmjBookmarkReportByReportIds" parameterType="String">
+        delete from ptmj_bookmark_report where report_id in
+        <foreach item="reportId" collection="array" open="(" separator="," close=")">
+            #{reportId}
+        </foreach>
+    </delete>
+</mapper>

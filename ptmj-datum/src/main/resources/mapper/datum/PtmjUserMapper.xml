@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ptmj.datum.mapper.PtmjUserMapper">
+
+    <resultMap type="PtmjUser" id="PtmjUserResult">
+        <result property="userId"    column="user_id"    />
+        <result property="userName"    column="user_name"    />
+        <result property="password"    column="password"    />
+        <result property="avatar"    column="avatar"    />
+        <result property="count"    column="count"    />
+        <result property="status"    column="status"    />
+        <result property="creatBy"    column="creat_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectPtmjUserVo">
+        select user_id, user_name, password, avatar, count, status, creat_by, create_time, update_by, update_time, remark from ptmj_user
+    </sql>
+
+    <select id="selectPtmjUserList" parameterType="PtmjUser" resultMap="PtmjUserResult">
+        <include refid="selectPtmjUserVo"/>
+        <where>
+            <if test="userName != null  and userName != ''"> and user_name like concat('%', #{userName}, '%')</if>
+            <if test="password != null  and password != ''"> and password = #{password}</if>
+            <if test="avatar != null  and avatar != ''"> and avatar = #{avatar}</if>
+            <if test="count != null "> and count = #{count}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="creatBy != null  and creatBy != ''"> and creat_by = #{creatBy}</if>
+        </where>
+    </select>
+
+    <select id="selectPtmjUserByUserId" parameterType="Long" resultMap="PtmjUserResult">
+        <include refid="selectPtmjUserVo"/>
+        where user_id = #{userId}
+    </select>
+
+    <insert id="insertPtmjUser" parameterType="PtmjUser" useGeneratedKeys="true" keyProperty="userId">
+        insert into ptmj_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userName != null and userName != ''">user_name,</if>
+            <if test="password != null and password != ''">password,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="count != null">count,</if>
+            <if test="status != null">status,</if>
+            <if test="creatBy != null">creat_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userName != null and userName != ''">#{userName},</if>
+            <if test="password != null and password != ''">#{password},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="count != null">#{count},</if>
+            <if test="status != null">#{status},</if>
+            <if test="creatBy != null">#{creatBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePtmjUser" parameterType="PtmjUser">
+        update ptmj_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userName != null and userName != ''">user_name = #{userName},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="count != null">count = #{count},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="creatBy != null">creat_by = #{creatBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where user_id = #{userId}
+    </update>
+
+    <delete id="deletePtmjUserByUserId" parameterType="Long">
+        delete from ptmj_user where user_id = #{userId}
+    </delete>
+
+    <delete id="deletePtmjUserByUserIds" parameterType="String">
+        delete from ptmj_user where user_id in
+        <foreach item="userId" collection="array" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </delete>
+
+
+    <select id="selectTopUploaders" resultType="com.ptmj.datum.domain.vo.PtmjUserRankVO">
+        select user_id as userId, user_name as userName, avatar, count, remark, create_time as createTime
+        from ptmj_user
+        where status = '1' and count > 0
+        order by count desc
+            limit 12
+    </select>
+
+    <!--
+ * 根据用户名查询用户（用于注册时校验用户名是否已存在）
+ * @author sxm
+ * @date 2026-04-08
+-->
+    <!-- LYZ修改：按用户名查询改为复用resultMap，避免user_id映射异常导致重置密码更新不到记录 -->
+    <select id="selectPtmjUserByUserName" parameterType="String" resultMap="PtmjUserResult">
+        select user_id, user_name, password, avatar, count, status, creat_by, create_time, update_by, update_time, remark from ptmj_user
+        where user_name = #{userName}
+    </select>
+
+    <update id="updatePasswordByUserId">
+        update ptmj_user
+        set password = #{password}, update_time = now()
+        where user_id = #{userId}
+    </update>
+
+    <update id="incrementCountByUserId">
+        update ptmj_user
+        set count = count + 1, update_time = now()
+        where user_id = #{userId}
+    </update>
+</mapper>

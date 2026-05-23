@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ptmj.datum.mapper.PtmjFileMapper">
+
+    <resultMap type="PtmjFile" id="PtmjFileResult">
+        <result property="fileId"    column="file_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="fileName"    column="file_name"    />
+        <result property="fileUrl"    column="file_url"    />
+        <result property="fileSize"    column="file_size"    />
+        <result property="fileFormat"    column="file_format"    />
+        <result property="fileYear"    column="file_year"    />
+        <result property="fileType"    column="file_type"    />
+        <result property="fileSubject"    column="file_subject"    />
+        <result property="reviewer"    column="reviewer"    />
+        <result property="fileStatus"    column="file_status"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectPtmjFileVo">
+        select file_id, user_id, file_name, file_url, file_size, file_format, file_year, file_type, file_subject, reviewer, file_status, del_flag, create_by, create_time, update_by, update_time, remark from ptmj_file
+    </sql>
+
+    <select id="selectPtmjFileList" parameterType="PtmjFile" resultMap="PtmjFileResult">
+        <include refid="selectPtmjFileVo"/>
+        <where>
+            and (del_flag is null or del_flag = 0)
+            <if test="fileId != null"> and file_id = #{fileId}</if>
+            <if test="userId != null"> and user_id = #{userId}</if>
+            <if test="fileName != null  and fileName != ''"> and file_name like concat('%', #{fileName}, '%')</if>
+            <if test="fileUrl != null  and fileUrl != ''"> and file_url = #{fileUrl}</if>
+            <if test="fileSize != null "> and file_size = #{fileSize}</if>
+            <if test="fileFormat != null  and fileFormat != ''"> and file_format = #{fileFormat}</if>
+            <if test="fileYear != null "> and file_year = #{fileYear}</if>
+            <if test="fileType != null "> and file_type = #{fileType}</if>
+            <if test="fileSubject != null  and fileSubject != ''"> and file_subject = #{fileSubject}</if>
+            <if test="reviewer != null  and reviewer != ''"> and reviewer = #{reviewer}</if>
+            <if test="fileStatus != null "> and file_status = #{fileStatus}</if>
+        </where>
+    </select>
+
+    <select id="selectSubjectSuggestions" resultType="com.ptmj.datum.domain.vo.SubjectSuggestionVo">
+        select
+            file_subject as value,
+            count(file_id) as count
+        from ptmj_file
+        where del_flag = 0
+          and file_subject is not null
+          and trim(file_subject) != ''
+          <if test="keyword != null and keyword != ''">
+              and file_subject like concat('%', #{keyword}, '%')
+          </if>
+        group by file_subject
+        order by count(file_id) desc, file_subject asc
+        limit #{limit}
+    </select>
+
+    <select id="selectPtmjFileByFileId" parameterType="Long" resultMap="PtmjFileResult">
+        <include refid="selectPtmjFileVo"/>
+        where file_id = #{fileId}
+    </select>
+
+    <insert id="insertPtmjFile" parameterType="PtmjFile" useGeneratedKeys="true" keyProperty="fileId">
+        insert into ptmj_file
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="fileName != null and fileName != ''">file_name,</if>
+            <if test="fileUrl != null and fileUrl != ''">file_url,</if>
+            <if test="fileSize != null">file_size,</if>
+            <if test="fileFormat != null">file_format,</if>
+            <if test="fileYear != null">file_year,</if>
+            <if test="fileType != null">file_type,</if>
+            <if test="fileSubject != null and fileSubject != ''">file_subject,</if>
+            <if test="reviewer != null">reviewer,</if>
+            <if test="fileStatus != null">file_status,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="fileName != null and fileName != ''">#{fileName},</if>
+            <if test="fileUrl != null and fileUrl != ''">#{fileUrl},</if>
+            <if test="fileSize != null">#{fileSize},</if>
+            <if test="fileFormat != null">#{fileFormat},</if>
+            <if test="fileYear != null">#{fileYear},</if>
+            <if test="fileType != null">#{fileType},</if>
+            <if test="fileSubject != null and fileSubject != ''">#{fileSubject},</if>
+            <if test="reviewer != null">#{reviewer},</if>
+            <if test="fileStatus != null">#{fileStatus},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePtmjFile" parameterType="PtmjFile">
+        update ptmj_file
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="fileName != null and fileName != ''">file_name = #{fileName},</if>
+            <if test="fileUrl != null and fileUrl != ''">file_url = #{fileUrl},</if>
+            <if test="fileSize != null">file_size = #{fileSize},</if>
+            <if test="fileFormat != null">file_format = #{fileFormat},</if>
+            <if test="fileYear != null">file_year = #{fileYear},</if>
+            <if test="fileType != null">file_type = #{fileType},</if>
+            <if test="fileSubject != null and fileSubject != ''">file_subject = #{fileSubject},</if>
+            <if test="reviewer != null">reviewer = #{reviewer},</if>
+            <if test="fileStatus != null">file_status = #{fileStatus},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where file_id = #{fileId}
+    </update>
+
+    <delete id="deletePtmjFileByFileId" parameterType="Long">
+        delete from ptmj_file where file_id = #{fileId}
+    </delete>
+
+    <delete id="deletePtmjFileByFileIds" parameterType="String">
+        delete from ptmj_file where file_id in
+        <foreach item="fileId" collection="array" open="(" separator="," close=")">
+            #{fileId}
+        </foreach>
+    </delete>
+
+
+    <select id="countUploadedByUserId" resultType="long">
+        select count(1) from ptmj_file
+        where user_id = #{userId}
+        and (del_flag is null or del_flag = 0)
+    </select>
+</mapper>

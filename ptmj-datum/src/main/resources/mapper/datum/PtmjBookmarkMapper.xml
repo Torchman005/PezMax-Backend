@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ptmj.datum.mapper.PtmjBookmarkMapper">
+
+    <resultMap type="PtmjBookmark" id="PtmjBookmarkResult">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="url" column="url"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="coverImage" column="cover_image"/>
+        <result property="subject" column="subject"/>
+        <result property="resourceType" column="resource_type"/>
+        <result property="collection" column="collection"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <association property="user" javaType="PtmjUser">
+            <id property="userId" column="u_user_id"/>
+            <result property="userName" column="u_user_name"/>
+            <result property="avatar" column="u_avatar"/>
+            <result property="count" column="u_count"/>
+        </association>
+    </resultMap>
+
+    <sql id="selectPtmjBookmarkVo">
+        select b.id, b.user_id, b.url, b.title, b.description, b.cover_image, b.subject, b.resource_type, b.collection, b.status, b.del_flag, b.create_by, b.create_time, b.update_by, b.update_time, b.remark,
+               u.user_id as u_user_id, u.user_name as u_user_name, u.avatar as u_avatar, u.count as u_count
+        from ptmj_bookmark b
+        left join ptmj_user u on b.user_id = u.user_id
+    </sql>
+
+    <select id="selectPtmjBookmarkById" parameterType="Long" resultMap="PtmjBookmarkResult">
+        <include refid="selectPtmjBookmarkVo"/>
+        where b.id = #{id}
+    </select>
+
+    <select id="selectPtmjBookmarkList" parameterType="PtmjBookmark" resultMap="PtmjBookmarkResult">
+        <include refid="selectPtmjBookmarkVo"/>
+        <where>
+            and b.del_flag = 0
+            <if test="userId != null"> and b.user_id = #{userId}</if>
+            <if test="subject != null and subject != ''"> and b.subject = #{subject}</if>
+            <if test="resourceType != null and resourceType != ''"> and b.resource_type = #{resourceType}</if>
+            <if test="collection != null and collection != ''"> and b.collection = #{collection}</if>
+            <if test="status != null"> and b.status = #{status}</if>
+            <if test="keyword != null and keyword != ''">
+                and (b.title like concat('%', #{keyword}, '%') or b.description like concat('%', #{keyword}, '%'))
+            </if>
+        </where>
+        order by b.create_time desc
+    </select>
+
+    <insert id="insertPtmjBookmark" parameterType="PtmjBookmark" useGeneratedKeys="true" keyProperty="id">
+        insert into ptmj_bookmark
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="url != null and url != ''">url,</if>
+            <if test="title != null and title != ''">title,</if>
+            <if test="description != null">description,</if>
+            <if test="coverImage != null">cover_image,</if>
+            <if test="subject != null">subject,</if>
+            <if test="resourceType != null and resourceType != ''">resource_type,</if>
+            <if test="collection != null">collection,</if>
+            <if test="status != null">status,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="url != null and url != ''">#{url},</if>
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="description != null">#{description},</if>
+            <if test="coverImage != null">#{coverImage},</if>
+            <if test="subject != null">#{subject},</if>
+            <if test="resourceType != null and resourceType != ''">#{resourceType},</if>
+            <if test="collection != null">#{collection},</if>
+            <if test="status != null">#{status},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updatePtmjBookmark" parameterType="PtmjBookmark">
+        update ptmj_bookmark
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="subject != null">subject = #{subject},</if>
+            <if test="resourceType != null and resourceType != ''">resource_type = #{resourceType},</if>
+            <if test="collection != null">collection = #{collection},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="coverImage != null">cover_image = #{coverImage},</if>
+            <if test="url != null and url != ''">url = #{url},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="deletePtmjBookmarkById" parameterType="PtmjBookmark">
+        update ptmj_bookmark
+        set del_flag = 1,
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where id = #{id}
+          and user_id = #{userId}
+          and del_flag = 0
+    </update>
+</mapper>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ptmj.datum.mapper.PtmjDesktopFileMapper">
+
+    <resultMap id="PtmjFileResult" type="com.ptmj.datum.domain.PtmjFile">
+        <id property="fileId" column="file_id" />
+        <result property="userId" column="user_id" />
+        <result property="fileName" column="file_name" />
+        <result property="fileUrl" column="file_url" />
+        <result property="fileSize" column="file_size" />
+        <result property="fileFormat" column="file_format" />
+        <result property="fileYear" column="file_year" />
+        <result property="fileType" column="file_type" />
+        <result property="fileSubject" column="file_subject" />
+        <result property="reviewer" column="reviewer" />
+        <result property="fileStatus" column="file_status" />
+        <result property="delFlag" column="del_flag" />
+        <result property="createBy" column="create_by" />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy" column="update_by" />
+        <result property="updateTime" column="update_time" />
+        <result property="remark" column="remark" />
+    </resultMap>
+    <!-- 查询下载试卷列表  -->
+    <select id="selectPtmjDesktopFileList" resultMap="PtmjFileResult">
+        select * from ptmj_file where file_id in
+        <foreach item="item" index="index" collection="fileId" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+</mapper>
