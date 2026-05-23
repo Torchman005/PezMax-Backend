@@ -1,5 +1,5 @@
 <p align="center">
-	<img alt="logo" src="https://github.com/Torchman005/PezMax-Backend/blob/main/ruoyi-ui/src/assets/logo/logo.png">
+	<img alt="logo" src="https://github.com/Torchman005/PezMax-Backend/blob/main/ruoyi-ui/src/assets/logo/icon.ico">
 </p>
 <h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">PezMax Backend v1.0.0</h1>
 <h4 align="center">基于 Spring Boot 3/4 + JDK 17 的全栈开发框架（PezMax 项目后端）</h4>
