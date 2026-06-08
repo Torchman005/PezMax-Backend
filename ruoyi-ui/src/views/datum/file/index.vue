@@ -160,7 +160,7 @@
           <el-input v-model="form.fileYear" placeholder="如：2024" />
         </el-form-item>
         <el-form-item label="文件类型" prop="fileType">
-          <el-input v-model="form.fileType" placeholder="1-期末 2-期中 3-资料 4-补考 5-其他" />
+          <el-input v-model="form.fileType" placeholder="1-期末 2-期中 3-资料 4-补考 5-其他学校" />
         </el-form-item>
         <el-form-item label="科目" prop="fileSubject">
           <el-input v-model="form.fileSubject" placeholder="请输入科目" />
