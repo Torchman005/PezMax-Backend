@@ -89,6 +89,11 @@
         </template>
       </el-table-column>
       <!-- <el-table-column label="创建者" align="center" prop="creatBy" /> -->
+      <el-table-column label="注册时间" align="center" width="110">
+        <template #default="scope">
+          <span>{{ formatDate(scope.row.createTime) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="220">
         <template #default="scope">
@@ -218,6 +223,13 @@ function onTableAvatarError(row) {
 /** 表单头像加载失败 */
 function onFormAvatarError() {
   formAvatarError.value = true
+}
+
+/** 格式化日期，只显示年月日 */
+function formatDate(dateStr) {
+  if (!dateStr) return '-'
+  // 处理 ISO 格式如 2024-01-15T10:30:00 或 2024-01-15
+  return dateStr.substring(0, 10)
 }
 
 const data = reactive({

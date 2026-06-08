@@ -83,6 +83,11 @@
       </el-table-column>
       <el-table-column label="举报用户id" align="center" prop="userId" />
       <el-table-column label="被举报原因" align="center" prop="reason" />
+      <el-table-column label="时间" align="center" width="110">
+        <template #default="scope">
+          <span>{{ formatDateTime(scope.row.createTime) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="审核结果" align="center" prop="result">
         <template #default="scope">
           <dict-tag :options="resultOptions" :value="scope.row.result" />
@@ -247,6 +252,12 @@ const title = ref("")
 const auditDialogVisible = ref(false)
 const auditRef = ref(null)
 const fileNameCache = reactive({})
+
+/** 格式化日期，只显示月日时（MM-DD HH:MM） */
+function formatDateTime(dateStr) {
+  if (!dateStr) return '-'
+  return dateStr.substring(5, 16)
+}
 
 // 审核结果字典
 const resultOptions = ref([
