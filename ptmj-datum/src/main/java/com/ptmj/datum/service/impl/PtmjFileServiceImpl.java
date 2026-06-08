@@ -92,8 +92,13 @@ public class PtmjFileServiceImpl implements IPtmjFileService
     @Value("${ptmj.file.default-subject:未知科目}")
     private String defaultSubject;
 
-    @Value("${ptmj.file.default-year:114514}")
-    private Long defaultYear;
+    /**
+     * 获取默认年份（当前现实时间的年份）。
+     * 当上传文件时填写的年份不合规（为空、小于下限或大于当前年份），则回退到当前年份。
+     */
+    private Long getDefaultYear() {
+        return (long) LocalDate.now().getYear();
+    }
 
     private LocalOfficeManager officeManager;
 
@@ -227,7 +232,7 @@ public class PtmjFileServiceImpl implements IPtmjFileService
             // 解析前三层基础路径
             String subject = (file.getFileSubject() != null && !file.getFileSubject().isEmpty()) ? file.getFileSubject() : "不填科目的←_←";
             String typeName = typeMap.getOrDefault(file.getFileType() != null ? file.getFileType() : -1L, "不填类型的→_→");
-            String year = (file.getFileYear() != null && file.getFileYear() >= minYear && file.getFileYear() <= LocalDate.now().getYear()) ? String.valueOf(file.getFileYear()) : String.valueOf(defaultYear);
+            String year = (file.getFileYear() != null && file.getFileYear() >= minYear && file.getFileYear() <= LocalDate.now().getYear()) ? String.valueOf(file.getFileYear()) : String.valueOf(getDefaultYear());
 
             // 组装所有目录层级
             List<String> pathParts = new ArrayList<>();
@@ -393,7 +398,7 @@ public class PtmjFileServiceImpl implements IPtmjFileService
         // 构建存储路径: file_type/file_subject/file_name
         String typePath = typeMap.get(ptmjFile.getFileType()) != null ? sanitizePath(typeMap.get(ptmjFile.getFileType())) : sanitizePath(defaultType);
         String subjectPath = (ptmjFile.getFileSubject() != null && !ptmjFile.getFileSubject().isEmpty()) ? sanitizePath(ptmjFile.getFileSubject()) : sanitizePath(defaultSubject);
-        Long yearPath = (ptmjFile.getFileYear() != null && ptmjFile.getFileYear() >= minYear && ptmjFile.getFileYear() <= LocalDate.now().getYear()) ? ptmjFile.getFileYear() : defaultYear;
+        Long yearPath = (ptmjFile.getFileYear() != null && ptmjFile.getFileYear() >= minYear && ptmjFile.getFileYear() <= LocalDate.now().getYear()) ? ptmjFile.getFileYear() : getDefaultYear();
         
         // 处理文件夹相对路径 (复用 remark 字段)
         String folderPath = (ptmjFile.getRemark() != null && !ptmjFile.getRemark().trim().isEmpty()) 
