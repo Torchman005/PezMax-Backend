@@ -67,7 +67,19 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="用户id" align="center" prop="userId" />
       <el-table-column label="用户账号" align="center" prop="userName" />
-      <el-table-column label="头像地址" align="center" prop="avatar" />
+      <el-table-column label="头像" align="center" width="80">
+        <template #default="scope">
+          <el-image
+            :src="getAvatarSrc(scope.row)"
+            style="width: 40px; height: 40px; border-radius: 50%"
+            fit="cover"
+            :preview-src-list="[getAvatarSrc(scope.row)]"
+            preview-teleported
+            hide-on-click-modal
+            @error="onTableAvatarError(scope.row)"
+          />
+        </template>
+      </el-table-column>
       <el-table-column label="上传文件数量" align="center" prop="count" />
       <el-table-column label="账号状态" align="center" prop="status">
         <template #default="scope">
@@ -76,7 +88,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建者" align="center" prop="creatBy" />
+      <!-- <el-table-column label="创建者" align="center" prop="creatBy" /> -->
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="220">
         <template #default="scope">
@@ -127,6 +139,15 @@
           <el-col :span="24">
             <el-form-item label="头像地址" prop="avatar">
               <el-input v-model="form.avatar" placeholder="请输入头像地址" />
+              <el-image
+                :src="form.avatar || defAva"
+                style="width: 60px; height: 60px; border-radius: 50%; margin-top: 8px"
+                fit="cover"
+                :preview-src-list="[form.avatar || defAva]"
+                preview-teleported
+                hide-on-click-modal
+                @error="onFormAvatarError"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -167,6 +188,7 @@
 <script setup name="User">
 import { ref, reactive, toRefs, getCurrentInstance } from 'vue'
 import { listUser, getUser, delUser, addUser, updateUser, changeUserStatus } from "@/api/datum/user"
+import defAva from '@/assets/images/luobo.jpg'
 
 const { proxy } = getCurrentInstance()
 
@@ -179,6 +201,24 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+const formAvatarError = ref(false)
+const tableAvatarErrors = reactive(new Set())
+
+/** 获取表格头像src（空或加载失败显示默认头像） */
+function getAvatarSrc(row) {
+  if (tableAvatarErrors.has(row.userId)) return defAva
+  return row.avatar || defAva
+}
+
+/** 表格头像加载失败 */
+function onTableAvatarError(row) {
+  tableAvatarErrors.add(row.userId)
+}
+
+/** 表单头像加载失败 */
+function onFormAvatarError() {
+  formAvatarError.value = true
+}
 
 const data = reactive({
   form: {},
@@ -231,6 +271,7 @@ function reset() {
     updateTime: null,
     remark: null
   }
+  formAvatarError.value = false
   proxy.resetForm("userRef")
 }
 
