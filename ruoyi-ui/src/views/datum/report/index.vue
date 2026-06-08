@@ -82,7 +82,11 @@
         </template>
       </el-table-column>
       <el-table-column label="举报用户id" align="center" prop="userId" />
-      <el-table-column label="被举报原因" align="center" prop="reason" />
+      <el-table-column label="被举报原因" align="center" show-overflow-tooltip>
+        <template #default="scope">
+          <span>{{ scope.row.reason && scope.row.reason.length > 15 ? scope.row.reason.substring(0, 15) + '...' : scope.row.reason }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="时间" align="center" width="110">
         <template #default="scope">
           <span>{{ formatDateTime(scope.row.createTime) }}</span>
