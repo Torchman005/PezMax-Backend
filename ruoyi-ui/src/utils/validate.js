@@ -112,3 +112,22 @@ export function isArray(arg) {
   }
   return Array.isArray(arg)
 }
+
+/**
+ * 将Minio本地地址映射为公网可访问地址
+ * 解决数据库存储minio:9000等内网地址导致外网无法加载图片的问题
+ * @param {string} url
+ * @returns {string}
+ */
+const MINIO_PUBLIC_HOST = 'http://154.8.139.48:9000'
+const MINIO_LOCAL_HOSTS = ['http://minio:9000', 'http://localhost:9000', 'http://127.0.0.1:9000', 'https://minio:9000', 'https://localhost:9000', 'https://127.0.0.1:9000']
+
+export function rewriteMinioUrl(url) {
+  if (!url) return url
+  for (const host of MINIO_LOCAL_HOSTS) {
+    if (url.startsWith(host)) {
+      return url.replace(host, MINIO_PUBLIC_HOST)
+    }
+  }
+  return url
+}

@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-import { isExternal } from "@/utils/validate"
+import { isExternal, rewriteMinioUrl } from "@/utils/validate"
 
 const props = defineProps({
   src: {
@@ -38,7 +38,7 @@ const realSrc = computed(() => {
   }
   let real_src = props.src.split(",")[0]
   if (isExternal(real_src)) {
-    return real_src
+    return rewriteMinioUrl(real_src)
   }
   return import.meta.env.VITE_APP_BASE_API + real_src
 })
@@ -51,7 +51,7 @@ const realSrcList = computed(() => {
   let srcList = []
   real_src_list.forEach(item => {
     if (isExternal(item)) {
-      return srcList.push(item)
+      return srcList.push(rewriteMinioUrl(item))
     }
     return srcList.push(import.meta.env.VITE_APP_BASE_API + item)
   })

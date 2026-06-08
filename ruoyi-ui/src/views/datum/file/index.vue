@@ -229,6 +229,7 @@
 <script setup name="File">
 import { listFile, getFile, delFile, addFile, updateFile, uploadDatumFile } from "@/api/datum/file"
 import useUserStore from "@/store/modules/user"
+import { rewriteMinioUrl } from "@/utils/validate"
 
 const { proxy } = getCurrentInstance()
 const userStore = useUserStore()
@@ -258,7 +259,7 @@ const previewUrl = computed(() => {
   if (!previewRow.value?.fileUrl) {
     return ""
   }
-  const base = previewRow.value.fileUrl
+  const base = rewriteMinioUrl(previewRow.value.fileUrl)
   if (previewType.value === "pdf") {
     return `${base}#page=${previewPage.value}`
   }
