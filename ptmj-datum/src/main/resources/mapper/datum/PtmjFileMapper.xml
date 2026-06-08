@@ -142,6 +142,22 @@
     </delete>
 
 
+    <select id="searchByKeyword" parameterType="String" resultMap="PtmjFileResult">
+        <include refid="selectPtmjFileVo"/>
+        where (del_flag is null or del_flag = 0)
+          and file_status = 1
+          <if test="keyword != null and keyword != ''">
+            and (
+              file_subject like concat('%', #{keyword}, '%')
+              or file_name like concat('%', #{keyword}, '%')
+            )
+          </if>
+        order by
+          case when file_subject like concat('%', #{keyword}, '%') then 0 else 1 end,
+          file_subject asc,
+          file_name asc
+    </select>
+
     <select id="countUploadedByUserId" resultType="long">
         select count(1) from ptmj_file
         where user_id = #{userId}

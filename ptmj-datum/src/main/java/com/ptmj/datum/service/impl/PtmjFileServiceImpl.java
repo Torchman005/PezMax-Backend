@@ -171,6 +171,21 @@ public class PtmjFileServiceImpl implements IPtmjFileService
     }
 
     /**
+     * @author lxq
+     *
+     * 按关键词搜索文件（同时匹配文件名和学科名称）
+     *
+     * @param keyword 搜索关键词
+     * @return 匹配的文件列表，学科命中优先排列
+     */
+    @Override
+    public List<PtmjFile> searchByKeyword(String keyword)
+    {
+        String safeKeyword = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
+        return ptmjFileMapper.searchByKeyword(safeKeyword);
+    }
+
+    /**
      * @author Lzj
      *
      * 获取学科联想推荐列表
