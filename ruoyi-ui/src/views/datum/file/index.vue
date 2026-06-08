@@ -199,7 +199,7 @@
         <div class="preview-info">
           <span>预览：{{ previewRow?.fileName || previewRow?.fileUrl }}</span>
           <el-tag v-if="previewType==='pdf'" type="info" style="margin-left:8px;">PDF</el-tag>
-          <el-tag v-else-if="previewType==='jpg' || previewType==='jpeg'" type="success" style="margin-left:8px;">JPG</el-tag>
+          <el-tag v-else-if="previewType==='image'" type="success" style="margin-left:8px;">{{ previewFormatLabel }}</el-tag>
         </div>
         <div class="preview-actions">
           <el-button size="small" type="success" @click="auditCurrent(true)" :loading="previewLoading">通过</el-button>
@@ -215,11 +215,11 @@
         <template v-if="previewType === 'pdf'">
           <iframe :src="previewUrl" frameborder="0" width="100%" height="100%"></iframe>
         </template>
-        <template v-else-if="previewType === 'jpg' || previewType === 'jpeg'">
+        <template v-else-if="previewType === 'image'">
           <img :src="previewUrl" class="file-preview-image" />
         </template>
         <template v-else>
-          <div class="preview-empty">仅支持 JPG/PDF 文件预览</div>
+          <div class="preview-empty">仅支持图片（JPG/PNG/GIF/WebP/BMP/SVG/ICO）和 PDF 文件预览</div>
         </template>
       </div>
     </el-dialog>
@@ -252,6 +252,7 @@ const previewOpen = ref(false)
 const previewRow = ref(null)
 const previewPage = ref(1)
 const previewType = ref("")
+const previewFormatLabel = ref("")
 const previewLoading = ref(false)
 const currentPreviewIndex = ref(-1)
 
@@ -531,9 +532,12 @@ function toggleReviewMode() {
   handleReviewModeChange()
 }
 
+const IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico']
+
 function isPreviewable(row) {
   const format = (row.fileFormat || row.fileUrl || "").toString().toLowerCase()
-  return format.includes("pdf") || format.includes("jpg") || format.includes("jpeg")
+  if (format.includes("pdf")) return true
+  return IMAGE_FORMATS.some(f => format.includes(f))
 }
 
 function getPreviewType(row) {
@@ -541,15 +545,22 @@ function getPreviewType(row) {
   if (format.includes("pdf")) {
     return "pdf"
   }
-  if (format.includes("jpg") || format.includes("jpeg")) {
-    return "jpg"
+  if (IMAGE_FORMATS.some(f => format.includes(f))) {
+    return "image"
   }
   return ""
+}
+
+function getPreviewFormatLabel(row) {
+  const format = (row.fileFormat || row.fileUrl || "").toString().toLowerCase()
+  const found = IMAGE_FORMATS.find(f => format.includes(f))
+  return found ? found.toUpperCase() : "IMG"
 }
 
 function openPreview(row, index) {
   previewRow.value = row
   previewType.value = getPreviewType(row)
+  previewFormatLabel.value = getPreviewFormatLabel(row)
   previewPage.value = 1
   previewOpen.value = true
   currentPreviewIndex.value = index
@@ -557,7 +568,7 @@ function openPreview(row, index) {
 
 function handlePreview(row, index) {
   if (!isPreviewable(row)) {
-    proxy.$modal.msgWarning("当前仅支持 JPG/PDF 文件预览")
+    proxy.$modal.msgWarning("当前仅支持图片（JPG/PNG/GIF/WebP/BMP/SVG/ICO）和 PDF 文件预览")
     return
   }
   const idx = typeof index === "number" ? index : fileList.value.findIndex(item => item.fileId === row.fileId)
@@ -569,6 +580,7 @@ function closePreview() {
   previewRow.value = null
   previewPage.value = 1
   previewType.value = ""
+  previewFormatLabel.value = ""
   currentPreviewIndex.value = -1
 }
 

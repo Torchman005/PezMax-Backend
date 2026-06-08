@@ -195,7 +195,7 @@
         <div class="preview-info">
           <span>预览：{{ previewRow?.fileName || previewRow?.fileUrl }}</span>
           <el-tag v-if="previewType==='pdf'" type="info" style="margin-left:8px;">PDF</el-tag>
-          <el-tag v-else-if="previewType==='jpg' || previewType==='jpeg'" type="success" style="margin-left:8px;">JPG</el-tag>
+          <el-tag v-else-if="previewType==='image'" type="success" style="margin-left:8px;">{{ previewFormatLabel }}</el-tag>
         </div>
         <div class="preview-actions">
           <el-button size="small" type="danger" @click="handlePreviewAudit(true)" :loading="previewLoading">通过</el-button>
@@ -216,11 +216,11 @@
         <template v-if="previewType === 'pdf'">
           <iframe :src="previewUrl" frameborder="0" width="100%" height="100%"></iframe>
         </template>
-        <template v-else-if="previewType === 'jpg' || previewType === 'jpeg'">
+        <template v-else-if="previewType === 'image'">
           <img :src="previewUrl" class="file-preview-image" />
         </template>
         <template v-else>
-          <div class="preview-empty">仅支持 JPG/PDF 文件预览</div>
+          <div class="preview-empty">仅支持图片（JPG/PNG/GIF/WebP/BMP/SVG/ICO）和 PDF 文件预览</div>
         </template>
       </div>
     </el-dialog>
@@ -272,6 +272,7 @@ const previewOpen = ref(false)
 const previewRow = ref(null)
 const previewPage = ref(1)
 const previewType = ref("")
+const previewFormatLabel = ref("")
 const previewLoading = ref(false)
 const previewReceipt = ref("")
 
@@ -479,11 +480,13 @@ function submitAudit() {
 
 // ========== 文件预览功能 ==========
 
+const IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico']
+
 /** 判断文件是否可预览 */
 function isPreviewable(row) {
-  const url = row.fileUrl || ''
   const format = (row.fileFormat || row.fileUrl || "").toString().toLowerCase()
-  return format.includes("pdf") || format.includes("jpg") || format.includes("jpeg")
+  if (format.includes("pdf")) return true
+  return IMAGE_FORMATS.some(f => format.includes(f))
 }
 
 /** 获取预览类型 */
@@ -492,16 +495,24 @@ function getPreviewType(row) {
   if (format.includes("pdf")) {
     return "pdf"
   }
-  if (format.includes("jpg") || format.includes("jpeg")) {
-    return "jpg"
+  if (IMAGE_FORMATS.some(f => format.includes(f))) {
+    return "image"
   }
   return ""
+}
+
+/** 获取预览格式标签 */
+function getPreviewFormatLabel(row) {
+  const format = (row.fileFormat || row.fileUrl || "").toString().toLowerCase()
+  const found = IMAGE_FORMATS.find(f => format.includes(f))
+  return found ? found.toUpperCase() : "IMG"
 }
 
 /** 打开预览弹窗 */
 function openPreview(row) {
   previewRow.value = row
   previewType.value = getPreviewType(row)
+  previewFormatLabel.value = getPreviewFormatLabel(row)
   previewPage.value = 1
   previewOpen.value = true
 }
@@ -516,7 +527,7 @@ function handlePreview(row) {
       row.fileFormat = fileData.fileFormat
       row.fileName = row.fileName || fileData.fileName
       if (!isPreviewable(row)) {
-        proxy.$modal.msgWarning("当前仅支持 JPG/PDF 文件预览")
+        proxy.$modal.msgWarning("当前仅支持图片（JPG/PNG/GIF/WebP/BMP/SVG/ICO）和 PDF 文件预览")
         return
       }
       openPreview(row)
@@ -525,7 +536,7 @@ function handlePreview(row) {
     })
   } else {
     if (!isPreviewable(row)) {
-      proxy.$modal.msgWarning("当前仅支持 JPG/PDF 文件预览")
+      proxy.$modal.msgWarning("当前仅支持图片（JPG/PNG/GIF/WebP/BMP/SVG/ICO）和 PDF 文件预览")
       return
     }
     openPreview(row)
@@ -538,6 +549,7 @@ function closePreview() {
   previewRow.value = null
   previewPage.value = 1
   previewType.value = ""
+  previewFormatLabel.value = ""
   previewReceipt.value = ""
 }
 
