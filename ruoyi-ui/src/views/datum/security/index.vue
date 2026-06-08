@@ -62,7 +62,11 @@
       <el-table-column label="主键" align="center" prop="id" />
       <el-table-column label="用户ID" align="center" prop="userId" />
       <el-table-column label="密保问题" align="center" prop="question" />
-      <el-table-column label="密保答案" align="center" prop="answer" />
+      <el-table-column label="密保答案" align="center" show-overflow-tooltip>
+        <template #default="scope">
+          <span>{{ scope.row.answer && scope.row.answer.length > 15 ? scope.row.answer.substring(0, 15) + '...' : scope.row.answer }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
