@@ -89,16 +89,24 @@
         </template>
       </el-table-column>
       <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="280">
         <template #default="scope">
           <el-button
               v-if="scope.row.result === '0'"
               link
-              type="warning"
+              type="danger"
               icon="Check"
-              @click="handleAudit(scope.row)"
+              @click="handlePass(scope.row)"
               v-hasPermi="['datum:report:audit']"
-          >审核</el-button>
+          >通过</el-button>
+          <el-button
+              v-if="scope.row.result === '0'"
+              link
+              type="success"
+              icon="Close"
+              @click="handleReject(scope.row)"
+              v-hasPermi="['datum:report:audit']"
+          >拒绝</el-button>
           <el-button link type="primary" icon="View" @click="handlePreview(scope.row)">预览</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['datum:report:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['datum:report:remove']">删除</el-button>
@@ -157,17 +165,11 @@
       </template>
     </el-dialog>
 
-    <!-- 审核举报对话框 -->
-    <el-dialog title="举报审核" v-model="auditDialogVisible" width="500px" append-to-body>
+    <!-- 举报回执对话框 -->
+    <el-dialog title="举报回执" v-model="auditDialogVisible" width="500px" append-to-body>
       <el-form ref="auditRef" :model="auditForm" :rules="auditRules" label-width="100px">
-        <el-form-item label="审核结果" prop="result">
-          <el-radio-group v-model="auditForm.result">
-            <el-radio label="1">属实</el-radio>
-            <el-radio label="2">不属实</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="审核备注" prop="remark">
-          <el-input type="textarea" v-model="auditForm.remark" placeholder="请输入审核备注" />
+        <el-form-item label="回执内容" prop="receipt">
+          <el-input type="textarea" :rows="4" v-model="auditForm.receipt" :placeholder="auditForm.defaultPlaceholder" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -180,6 +182,15 @@
 
     <!-- 文件预览对话框（含举报原因与审核操作） -->
     <el-dialog title="文件预览" v-model="previewOpen" width="80%" top="4vh" append-to-body @close="closePreview">
+      <!-- 回执内容输入 -->
+      <div class="preview-receipt-input">
+        <el-input
+          v-model="previewReceipt"
+          type="textarea"
+          :rows="2"
+          placeholder="请输入回执内容（通过默认：资料已下架；拒绝默认：举报未通过，请联系管理员）"
+        />
+      </div>
       <div class="preview-toolbar">
         <div class="preview-info">
           <span>预览：{{ previewRow?.fileName || previewRow?.fileUrl }}</span>
@@ -187,8 +198,8 @@
           <el-tag v-else-if="previewType==='jpg' || previewType==='jpeg'" type="success" style="margin-left:8px;">JPG</el-tag>
         </div>
         <div class="preview-actions">
-          <el-button size="small" type="danger" @click="handlePreviewAudit(true)" :loading="previewLoading">举报属实</el-button>
-          <el-button size="small" type="success" @click="handlePreviewAudit(false)" :loading="previewLoading">举报不属实</el-button>
+          <el-button size="small" type="danger" @click="handlePreviewAudit(true)" :loading="previewLoading">通过</el-button>
+          <el-button size="small" type="success" @click="handlePreviewAudit(false)" :loading="previewLoading">拒绝</el-button>
         </div>
       </div>
       <!-- 举报原因显示 -->
@@ -220,6 +231,7 @@
 import { ref, reactive, toRefs, getCurrentInstance, computed, nextTick } from 'vue'
 import { listReport, getReport, delReport, addReport, updateReport, auditReport } from "@/api/datum/report"
 import { getFile } from "@/api/datum/file"
+import { rewriteMinioUrl } from "@/utils/validate"
 
 const { proxy } = getCurrentInstance()
 
@@ -243,15 +255,16 @@ const resultOptions = ref([
   { label: '不属实', value: '2' }
 ])
 
-// 审核表单
+// 回执表单
 const auditForm = reactive({
   reportId: null,
   result: '1',
-  remark: ''
+  receipt: '',
+  defaultPlaceholder: ''
 })
 
 const auditRules = {
-  result: [{ required: true, message: '请选择审核结果', trigger: 'change' }]
+  receipt: [{ required: true, message: '回执内容不能为空', trigger: 'blur' }]
 }
 
 // 预览相关状态
@@ -260,12 +273,13 @@ const previewRow = ref(null)
 const previewPage = ref(1)
 const previewType = ref("")
 const previewLoading = ref(false)
+const previewReceipt = ref("")
 
 const previewUrl = computed(() => {
   if (!previewRow.value?.fileUrl) {
     return ""
   }
-  const base = previewRow.value.fileUrl
+  const base = rewriteMinioUrl(previewRow.value.fileUrl)
   if (previewType.value === "pdf") {
     return `${base}#page=${previewPage.value}`
   }
@@ -428,24 +442,34 @@ function handleExport() {
   }, `report_${new Date().getTime()}.xlsx`)
 }
 
-/** 打开审核弹窗 */
-function handleAudit(row) {
+/** 通过按钮（result=1 属实） */
+function handlePass(row) {
   auditForm.reportId = row.reportId
   auditForm.result = '1'
-  auditForm.remark = ''
+  auditForm.receipt = '资料已下架'
+  auditForm.defaultPlaceholder = '通过默认回执：资料已下架'
   auditDialogVisible.value = true
 }
 
-/** 提交审核 */
+/** 拒绝按钮（result=2 不属实） */
+function handleReject(row) {
+  auditForm.reportId = row.reportId
+  auditForm.result = '2'
+  auditForm.receipt = '举报未通过，请联系管理员'
+  auditForm.defaultPlaceholder = '拒绝默认回执：举报未通过，请联系管理员'
+  auditDialogVisible.value = true
+}
+
+/** 提交审核回执 */
 function submitAudit() {
   auditRef.value.validate(valid => {
     if (valid) {
       auditReport({
         reportId: auditForm.reportId,
         result: auditForm.result,
-        remark: auditForm.remark
+        remark: auditForm.receipt || ''
       }).then(() => {
-        proxy.$modal.msgSuccess("审核成功")
+        proxy.$modal.msgSuccess("审核完成")
         auditDialogVisible.value = false
         getList()
       }).catch(() => {})
@@ -514,6 +538,7 @@ function closePreview() {
   previewRow.value = null
   previewPage.value = 1
   previewType.value = ""
+  previewReceipt.value = ""
 }
 
 /** 上一页 */
@@ -530,22 +555,22 @@ function nextPreviewPage() {
   }
 }
 
-/** 预览弹窗中审核：举报属实 / 举报不属实 */
+/** 预览弹窗中审核 */
 function handlePreviewAudit(pass) {
   if (!previewRow.value) {
     return
   }
-  previewLoading.value = true
-  // pass=true: 举报属实 → 后端将 file_status 改为 2(未通过)
-  // pass=false: 举报不属实 → 后端将 file_status 改为 1(通过)
   const reportResult = pass ? '1' : '2'
+  const defaultReceipt = pass ? '资料已下架' : '举报未通过，请联系管理员'
+  const remark = previewReceipt.value || defaultReceipt
 
+  previewLoading.value = true
   auditReport({
     reportId: previewRow.value.reportId,
     result: reportResult,
-    remark: previewRow.value.remark || ''
+    remark
   }).then(() => {
-    proxy.$modal.msgSuccess(pass ? "举报属实，文件状态已标记为未通过" : "举报不属实，文件状态已恢复为通过")
+    proxy.$modal.msgSuccess(pass ? "举报已通过，资料已下架" : "举报已拒绝")
     closePreview()
     getList()
   }).catch(() => {
@@ -559,6 +584,13 @@ getList()
 </script>
 
 <style scoped>
+.preview-receipt-input {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+}
 .preview-toolbar {
   display: flex;
   align-items: center;
