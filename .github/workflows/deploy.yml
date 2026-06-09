@@ -43,9 +43,19 @@ jobs:
             # 进入目标项目文件夹
             cd /home/ubuntu/PezMax/pezmax-backend
             
-            # 确保处于 main 分支并拉取最新代码
-            git checkout main
-            git pull origin main
+            # 因为服务器之前绑定的是 Gitee 且默认分支为 master
+            # 我们直接使用 GitHub 提供的临时 Token，强制从 GitHub 拉取 main 分支
             
-            # 使用 docker compose 重新构建并部署服务
-            docker compose up -d --build
+            # 1. 确保本地切换到一个名为 main 的分支 (如果原本是 master，这会新建 main)
+            git checkout -B main
+            
+            # 2. 从当前 GitHub 仓库抓取 main 分支的最新代码
+            git fetch https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main
+            
+            # 3. 强制将本地代码重置为 GitHub 的最新状态 
+            # (这会丢弃服务器上的本地代码修改，但会安全地保留 docker 的 data/logs 等未追踪目录)
+            git reset --hard FETCH_HEAD
+            
+            # 重启后端服务 (利用 docker compose 的机制)
+            # 使用 sudo 解决 Docker 权限问题
+            sudo docker compose up -d --build server
