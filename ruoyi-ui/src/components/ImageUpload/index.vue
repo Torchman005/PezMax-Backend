@@ -49,7 +49,7 @@
 
 <script setup>
 import { getToken } from "@/utils/auth"
-import { isExternal } from "@/utils/validate"
+import { isExternal, rewriteMinioUrl } from "@/utils/validate"
 import Sortable from 'sortablejs'
 
 const props = defineProps({
@@ -119,7 +119,7 @@ watch(() => props.modelValue, val => {
         if (item.indexOf(baseUrl) === -1 && !isExternal(item)) {
           item = { name: baseUrl + item, url: baseUrl + item }
         } else {
-          item = { name: item, url: item }
+          item = { name: rewriteMinioUrl(item), url: rewriteMinioUrl(item) }
         }
       }
       return item
@@ -213,7 +213,7 @@ function handleUploadError() {
 
 // 预览
 function handlePictureCardPreview(file) {
-  dialogImageUrl.value = file.url
+  dialogImageUrl.value = rewriteMinioUrl(file.url)
   dialogVisible.value = true
 }
 

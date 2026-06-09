@@ -214,13 +214,12 @@ public class PtmjFileController extends BaseController
     }
     /**
      * lxq
-     * 查询试卷文件列表（不分页）
+     * 按关键词搜索文件（同时匹配文件名和学科名称），学科命中优先排列
      */
     @GetMapping("/search")
-    public List<PtmjFile> search(PtmjFile ptmjFile)
+    public List<PtmjFile> search(@RequestParam(value = "keyword", required = false) String keyword)
     {
-        ptmjFile.setFileStatus(1L);//只显示状态为1（通过）的文件
-        return ptmjFileService.selectPtmjFileList(ptmjFile);
+        return ptmjFileService.searchByKeyword(keyword);
     }
 
 //    /**

@@ -75,6 +75,14 @@ public interface PtmjFileMapper
     public int deletePtmjFileByFileIds(Long[] fileIds);
 
     /**
+     * 按关键词搜索文件（同时匹配文件名和学科名称）
+     * @param keyword 搜索关键词
+     * @return 匹配的文件列表，学科命中优先排列
+     * @Author lxq
+     */
+    public List<PtmjFile> searchByKeyword(@Param("keyword") String keyword);
+
+    /**
      * 统计某用户上传且未删除的文件数
      * @param userId 用户ID
      * @return 文件数
