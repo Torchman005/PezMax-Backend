@@ -5,6 +5,7 @@ import java.util.List;
 import com.ptmj.datum.domain.PtmjFile;
 import com.ptmj.datum.domain.vo.FileTreeVo;
 import com.ptmj.datum.domain.vo.SubjectSuggestionVo;
+import com.ptmj.datum.domain.vo.SchoolSuggestionVo;
 
 /**
  * 试卷文件Service接口
@@ -46,6 +47,23 @@ public interface IPtmjFileService
      * @return 学科推荐集合
      */
     public List<SubjectSuggestionVo> getSubjectSuggestions(String keyword, Integer limit);
+
+    /**
+     * 获取学校联想推荐列表
+     *
+     * @param keyword 模糊搜索关键字
+     * @param limit 返回条数
+     * @return 学校推荐集合
+     */
+    public List<SchoolSuggestionVo> getSchoolSuggestions(String keyword, Integer limit);
+
+    /**
+     * 检查学校名称是否已存在
+     *
+     * @param schoolName 学校名称
+     * @return 存在返回true，否则返回false
+     */
+    public boolean checkSchoolNameExists(String schoolName);
 
     /**
      * 按关键词搜索文件（同时匹配文件名和学科名称）

@@ -6,6 +6,7 @@ import java.util.Map;
 import com.ptmj.datum.domain.PtmjFile;
 import com.ptmj.datum.domain.vo.FileTreeVo;
 import com.ptmj.datum.domain.vo.SubjectSuggestionVo;
+import com.ptmj.datum.domain.vo.SchoolSuggestionVo;
 import com.ptmj.datum.service.IPtmjFileDownloadService;
 import com.ptmj.datum.service.IPtmjFileService;
 import com.ruoyi.common.utils.file.MinioStorageService;
@@ -128,6 +129,28 @@ public class PtmjFileController extends BaseController
     {
         List<SubjectSuggestionVo> subjects = ptmjFileService.getSubjectSuggestions(keyword, limit);
         return success(subjects);
+    }
+
+    /**
+     * 获取学校联想推荐列表
+     */
+    @Anonymous
+    @GetMapping("/schools")
+    public AjaxResult getSchools(@RequestParam(value = "keyword", required = false) String keyword,
+                                 @RequestParam(value = "limit", required = false) Integer limit)
+    {
+        List<SchoolSuggestionVo> schools = ptmjFileService.getSchoolSuggestions(keyword, limit);
+        return success(schools);
+    }
+
+    /**
+     * 检查学校名称是否已存在
+     */
+    @GetMapping("/schools/check")
+    public AjaxResult checkSchoolName(@RequestParam("schoolName") String schoolName)
+    {
+        boolean exists = ptmjFileService.checkSchoolNameExists(schoolName);
+        return success(exists);
     }
 
 

@@ -13,6 +13,7 @@
         <result property="fileFormat"    column="file_format"    />
         <result property="fileYear"    column="file_year"    />
         <result property="fileType"    column="file_type"    />
+        <result property="fileSchool"    column="file_school"    />
         <result property="fileSubject"    column="file_subject"    />
         <result property="reviewer"    column="reviewer"    />
         <result property="fileStatus"    column="file_status"    />
@@ -25,7 +26,7 @@
     </resultMap>
 
     <sql id="selectPtmjFileVo">
-        select file_id, user_id, file_name, file_url, file_size, file_format, file_year, file_type, file_subject, reviewer, file_status, del_flag, create_by, create_time, update_by, update_time, remark from ptmj_file
+        select file_id, user_id, file_name, file_url, file_size, file_format, file_year, file_type, file_school, file_subject, reviewer, file_status, del_flag, create_by, create_time, update_by, update_time, remark from ptmj_file
     </sql>
 
     <select id="selectPtmjFileList" parameterType="PtmjFile" resultMap="PtmjFileResult">
@@ -40,6 +41,7 @@
             <if test="fileFormat != null  and fileFormat != ''"> and file_format = #{fileFormat}</if>
             <if test="fileYear != null "> and file_year = #{fileYear}</if>
             <if test="fileType != null "> and file_type = #{fileType}</if>
+            <if test="fileSchool != null  and fileSchool != ''"> and file_school = #{fileSchool}</if>
             <if test="fileSubject != null  and fileSubject != ''"> and file_subject = #{fileSubject}</if>
             <if test="reviewer != null  and reviewer != ''"> and reviewer = #{reviewer}</if>
             <if test="fileStatus != null "> and file_status = #{fileStatus}</if>
@@ -62,6 +64,30 @@
         limit #{limit}
     </select>
 
+    <select id="selectSchoolSuggestions" resultType="com.ptmj.datum.domain.vo.SchoolSuggestionVo">
+        select
+            file_school as value,
+            count(file_id) as count
+        from ptmj_file
+        where del_flag = 0
+          and file_school is not null
+          and trim(file_school) != ''
+          <if test="keyword != null and keyword != ''">
+              and file_school like concat('%', #{keyword}, '%')
+          </if>
+        group by file_school
+        order by count(file_id) desc, file_school asc
+        limit #{limit}
+    </select>
+
+    <select id="checkSchoolNameExists" resultType="boolean">
+        select count(1) > 0
+        from ptmj_file
+        where del_flag = 0
+          and file_school = #{schoolName}
+        limit 1
+    </select>
+
     <select id="selectPtmjFileByFileId" parameterType="Long" resultMap="PtmjFileResult">
         <include refid="selectPtmjFileVo"/>
         where file_id = #{fileId}
@@ -77,6 +103,7 @@
             <if test="fileFormat != null">file_format,</if>
             <if test="fileYear != null">file_year,</if>
             <if test="fileType != null">file_type,</if>
+            <if test="fileSchool != null and fileSchool != ''">file_school,</if>
             <if test="fileSubject != null and fileSubject != ''">file_subject,</if>
             <if test="reviewer != null">reviewer,</if>
             <if test="fileStatus != null">file_status,</if>
@@ -95,6 +122,7 @@
             <if test="fileFormat != null">#{fileFormat},</if>
             <if test="fileYear != null">#{fileYear},</if>
             <if test="fileType != null">#{fileType},</if>
+            <if test="fileSchool != null and fileSchool != ''">#{fileSchool},</if>
             <if test="fileSubject != null and fileSubject != ''">#{fileSubject},</if>
             <if test="reviewer != null">#{reviewer},</if>
             <if test="fileStatus != null">#{fileStatus},</if>
@@ -117,6 +145,7 @@
             <if test="fileFormat != null">file_format = #{fileFormat},</if>
             <if test="fileYear != null">file_year = #{fileYear},</if>
             <if test="fileType != null">file_type = #{fileType},</if>
+            <if test="fileSchool != null">file_school = #{fileSchool},</if>
             <if test="fileSubject != null and fileSubject != ''">file_subject = #{fileSubject},</if>
             <if test="reviewer != null">reviewer = #{reviewer},</if>
             <if test="fileStatus != null">file_status = #{fileStatus},</if>
@@ -148,12 +177,16 @@
           and file_status = 1
           <if test="keyword != null and keyword != ''">
             and (
-              file_subject like concat('%', #{keyword}, '%')
+              file_school like concat('%', #{keyword}, '%')
+              or file_subject like concat('%', #{keyword}, '%')
               or file_name like concat('%', #{keyword}, '%')
             )
           </if>
         order by
-          case when file_subject like concat('%', #{keyword}, '%') then 0 else 1 end,
+          case when file_school like concat('%', #{keyword}, '%') then 0
+               when file_subject like concat('%', #{keyword}, '%') then 1
+               else 2 end,
+          file_school asc,
           file_subject asc,
           file_name asc
     </select>

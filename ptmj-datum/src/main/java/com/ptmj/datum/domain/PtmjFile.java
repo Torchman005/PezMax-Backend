@@ -3,6 +3,7 @@ package com.ptmj.datum.domain;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
@@ -43,12 +44,16 @@ public class PtmjFile extends BaseEntity
     private Long fileYear;
 
     /** 文件类型：1-期末，2-期中，3-资料，4-补考，5-其他学校 */
-    @Excel(name = "文件类型：1-期末，2-期中，3-资料，4-补考，5-其他学校")
-    private Long fileType;
+  @Excel(name = "文件类型：1-期末，2-期中，3-资料，4-补考，5-其他学校")
+  private Long fileType;
 
-    /** 科目 */
-    @Excel(name = "科目")
-    private String fileSubject;
+  /** 学校名称 */
+  @Excel(name = "学校名称")
+  private String fileSchool;
+
+  /** 科目 */
+  @Excel(name = "科目")
+  private String fileSubject;
 
     /** 审核人 */
     @Excel(name = "审核人")
@@ -141,6 +146,16 @@ public class PtmjFile extends BaseEntity
         return fileType;
     }
 
+    public void setFileSchool(String fileSchool)
+    {
+        this.fileSchool = fileSchool;
+    }
+
+    public String getFileSchool()
+    {
+        return fileSchool;
+    }
+
     public void setFileSubject(String fileSubject)
     {
         this.fileSubject = fileSubject;
@@ -192,6 +207,7 @@ public class PtmjFile extends BaseEntity
                 .append("fileFormat", getFileFormat())
                 .append("fileYear", getFileYear())
                 .append("fileType", getFileType())
+                .append("fileSchool", getFileSchool())
                 .append("fileSubject", getFileSubject())
             .append("reviewer", getReviewer())
             .append("fileStatus", getFileStatus())
