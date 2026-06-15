@@ -94,6 +94,11 @@ public class PtmjFileServiceImpl implements IPtmjFileService
     private String defaultSubject;
 
     /**
+     * 默认学校名称（用于历史数据和兼容性）
+     */
+    private static final String DEFAULT_SCHOOL_NAME = "齐鲁工业大学";
+
+    /**
      * 获取默认年份（当前现实时间的年份）。
      * 当上传文件时填写的年份不合规（为空、小于下限或大于当前年份），则回退到当前年份。
      */
@@ -161,7 +166,12 @@ public class PtmjFileServiceImpl implements IPtmjFileService
     @Override
     public PtmjFile selectPtmjFileByFileId(Long fileId)
     {
-        return ptmjFileMapper.selectPtmjFileByFileId(fileId);
+        PtmjFile file = ptmjFileMapper.selectPtmjFileByFileId(fileId);
+        // 兼容性处理：历史文件没有 file_school 时，设置默认值
+        if (file != null && file.getFileSchool() == null) {
+            file.setFileSchool(DEFAULT_SCHOOL_NAME);
+        }
+        return file;
     }
 
     /**
@@ -173,7 +183,14 @@ public class PtmjFileServiceImpl implements IPtmjFileService
     @Override
     public List<PtmjFile> selectPtmjFileList(PtmjFile ptmjFile)
     {
-        return ptmjFileMapper.selectPtmjFileList(ptmjFile);
+        List<PtmjFile> files = ptmjFileMapper.selectPtmjFileList(ptmjFile);
+        // 兼容性处理：历史文件没有 file_school 时，设置默认值
+        for (PtmjFile file : files) {
+            if (file.getFileSchool() == null) {
+                file.setFileSchool(DEFAULT_SCHOOL_NAME);
+            }
+        }
+        return files;
     }
 
     /**
@@ -188,7 +205,14 @@ public class PtmjFileServiceImpl implements IPtmjFileService
     public List<PtmjFile> searchByKeyword(String keyword)
     {
         String safeKeyword = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
-        return ptmjFileMapper.searchByKeyword(safeKeyword);
+        List<PtmjFile> files = ptmjFileMapper.searchByKeyword(safeKeyword);
+        // 兼容性处理：历史文件没有 file_school 时，设置默认值
+        for (PtmjFile file : files) {
+            if (file.getFileSchool() == null) {
+                file.setFileSchool(DEFAULT_SCHOOL_NAME);
+            }
+        }
+        return files;
     }
 
     /**
@@ -340,6 +364,10 @@ public class PtmjFileServiceImpl implements IPtmjFileService
         if (ptmjFile.getUserId() == null) {
             ptmjFile.setUserId(SecurityUtils.getUserId());
         }
+        // 确保学校字段有值
+        if (ptmjFile.getFileSchool() == null || ptmjFile.getFileSchool().trim().isEmpty()) {
+            ptmjFile.setFileSchool(DEFAULT_SCHOOL_NAME);
+        }
         ptmjFile.setCreateTime(DateUtils.getNowDate());
         int result = ptmjFileMapper.insertPtmjFile(ptmjFile);
         if (result > 0 && ptmjFile.getUserId() != null) {
@@ -433,9 +461,8 @@ public class PtmjFileServiceImpl implements IPtmjFileService
         }
 
         Map<Long, String> typeMap = this.getTypeMap();
-        // 构建存储路径: file_subject/file_school/file_type/file_year/
+        // 构建存储路径: file_subject/file_type/file_year/ (保持旧格式，兼容历史文件)
         String subjectPath = (ptmjFile.getFileSubject() != null && !ptmjFile.getFileSubject().isEmpty()) ? sanitizePath(ptmjFile.getFileSubject()) : sanitizePath(defaultSubject);
-        String schoolPath = (ptmjFile.getFileSchool() != null && !ptmjFile.getFileSchool().isEmpty()) ? sanitizePath(ptmjFile.getFileSchool()) : "齐鲁工业大学";
         String typePath = typeMap.get(ptmjFile.getFileType()) != null ? sanitizePath(typeMap.get(ptmjFile.getFileType())) : sanitizePath(defaultType);
         Long yearPath = (ptmjFile.getFileYear() != null && ptmjFile.getFileYear() >= minYear && ptmjFile.getFileYear() <= LocalDate.now().getYear()) ? ptmjFile.getFileYear() : getDefaultYear();
         
@@ -457,7 +484,8 @@ public class PtmjFileServiceImpl implements IPtmjFileService
             folderPath = sb.toString();
         }
         
-        String objectName = subjectPath + "/" + schoolPath + "/" + typePath + "/" + yearPath + "/";
+        // 保持旧路径格式：subject/type/year/
+        String objectName = subjectPath + "/" + typePath + "/" + yearPath + "/";
         if (!folderPath.isEmpty()) {
             objectName += folderPath + "/";
         }
