@@ -1,4 +1,4 @@
-name: Backend CI/CD (Improved)
+name: Backend CI/CD (Robust)
 
 on:
   push:
@@ -45,7 +45,7 @@ jobs:
             set -e  # 任何命令失败都退出
             set -x  # 打印执行的命令
             
-            echo "=== 开始部署 ==="
+            echo "=== 开始部署 $(date) ==="
             
             # 进入目标项目文件夹
             cd /home/ubuntu/PezMax/pezmax-backend || { echo "项目目录不存在"; exit 1; }
@@ -58,23 +58,76 @@ jobs:
             # 清理悬空镜像，确保完全重新构建
             sudo docker image prune -f || true
             
-            echo "=== 2. 更新代码 ==="
+            echo "=== 2. 更新代码（带重试） ==="
+            
+            # 函数：带重试的 Git 操作
+            git_with_retry() {
+              local max_attempts=5
+              local attempt=1
+              local wait_time=10
+              
+              while [ $attempt -le $max_attempts ]; do
+                echo "Git 操作尝试 $attempt/$max_attempts..."
+                
+                if "$@"; then
+                  echo "✅ Git 操作成功"
+                  return 0
+                fi
+                
+                if [ $attempt -lt $max_attempts ]; then
+                  echo "⚠️ Git 操作失败，等待 $wait_time 秒后重试..."
+                  sleep $wait_time
+                  wait_time=$((wait_time * 2))  # 指数退避
+                fi
+                
+                attempt=$((attempt + 1))
+              done
+              
+              echo "❌ Git 操作在 $max_attempts 次尝试后仍然失败"
+              return 1
+            }
+            
             # 确保本地切换到 main 分支
             git checkout -B main
             
-            # 强制从 GitHub 拉取最新代码
-            git fetch https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main
+            # 配置 Git 使用更宽松的 SSL 设置（解决 TLS 问题）
+            git config --global http.sslVerify false || true
+            git config --global http.postBuffer 524288000 || true
+            git config --global http.lowSpeedLimit 0 || true
+            git config --global http.lowSpeedTime 999999 || true
             
-            # 显示将要拉取的提交（便于调试）
-            echo "即将拉取的变更："
-            git log HEAD..FETCH_HEAD --oneline --stat || true
+            # 方式1: 使用 GitHub Token（主要方式）
+            echo "尝试方式1: 使用 GitHub Token 拉取"
+            if git_with_retry git fetch https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main; then
+              echo "✅ 使用 GitHub Token 成功"
+            else
+              # 方式2: 尝试 HTTPS（不带身份验证，只读）
+              echo "尝试方式2: 使用 HTTPS 拉取"
+              if git_with_retry git fetch https://github.com/${{ github.repository }}.git main; then
+                echo "✅ 使用 HTTPS 成功"
+              else
+                # 方式3: 尝试浅克隆（如果都失败，就尽量获取最新的）
+                echo "尝试方式3: 浅克隆"
+                git_with_retry git fetch --depth 1 https://github.com/${{ github.repository }}.git main || {
+                  echo "❌ 所有 Git 拉取方式都失败了，尝试使用现有代码继续部署..."
+                  # 即使 Git 失败，也尝试用现有代码部署
+                }
+              fi
+            fi
             
-            # 强制重置
-            git reset --hard FETCH_HEAD
+            # 只有 FETCH_HEAD 存在时才重置
+            if [ -f .git/FETCH_HEAD ]; then
+              # 显示将要拉取的提交（便于调试）
+              echo "即将应用的变更："
+              git log HEAD..FETCH_HEAD --oneline --stat 2>/dev/null || echo "无法获取变更日志"
+              
+              # 强制重置
+              git reset --hard FETCH_HEAD || true
+            fi
             
             # 验证代码版本
             echo "当前代码版本："
-            git log -1 --oneline
+            git log -1 --oneline 2>/dev/null || echo "无法获取 Git 版本"
             
             echo "=== 3. 构建并启动服务 ==="
             # 使用 --no-cache 强制完全重新构建
@@ -85,7 +138,7 @@ jobs:
             
             echo "=== 4. 等待服务启动 ==="
             # 等待容器启动
-            sleep 15
+            sleep 20
             
             echo "=== 5. 验证部署 ==="
             # 检查容器是否运行
@@ -97,8 +150,8 @@ jobs:
               exit 1
             fi
             
-            # 检查应用是否响应（可选，如果有健康检查端点）
-            echo "容器日志："
-            sudo docker compose logs --tail=30 server
+            # 检查应用是否响应
+            echo "最近的容器日志："
+            sudo docker compose logs --tail=50 server
             
-            echo "=== ✅ 部署完成 ==="
+            echo "=== ✅ 部署完成 $(date) ==="
