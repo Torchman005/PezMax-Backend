@@ -1,4 +1,4 @@
-name: Backend CI/CD
+name: Backend CI/CD (Improved)
 
 on:
   push:
@@ -30,9 +30,11 @@ jobs:
     name: Deploy to Server
     runs-on: ubuntu-latest
     needs: build-and-test
-    # 仅在代码直接推送到 main 分支或 PR 被合并到 main 分支时才触发部署
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -40,22 +42,63 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e  # 任何命令失败都退出
+            set -x  # 打印执行的命令
+            
+            echo "=== 开始部署 ==="
+            
             # 进入目标项目文件夹
-            cd /home/ubuntu/PezMax/pezmax-backend
+            cd /home/ubuntu/PezMax/pezmax-backend || { echo "项目目录不存在"; exit 1; }
             
-            # 因为服务器之前绑定的是 Gitee 且默认分支为 master
-            # 我们直接使用 GitHub 提供的临时 Token，强制从 GitHub 拉取 main 分支
+            echo "=== 1. 清理 Docker 资源 ==="
+            # 停止并删除旧容器
+            sudo docker compose stop server || true
+            sudo docker compose rm -f server || true
             
-            # 1. 确保本地切换到一个名为 main 的分支 (如果原本是 master，这会新建 main)
+            # 清理悬空镜像，确保完全重新构建
+            sudo docker image prune -f || true
+            
+            echo "=== 2. 更新代码 ==="
+            # 确保本地切换到 main 分支
             git checkout -B main
             
-            # 2. 从当前 GitHub 仓库抓取 main 分支的最新代码
+            # 强制从 GitHub 拉取最新代码
             git fetch https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git main
             
-            # 3. 强制将本地代码重置为 GitHub 的最新状态 
-            # (这会丢弃服务器上的本地代码修改，但会安全地保留 docker 的 data/logs 等未追踪目录)
+            # 显示将要拉取的提交（便于调试）
+            echo "即将拉取的变更："
+            git log HEAD..FETCH_HEAD --oneline --stat || true
+            
+            # 强制重置
             git reset --hard FETCH_HEAD
             
-            # 重启后端服务 (利用 docker compose 的机制)
-            # 使用 sudo 解决 Docker 权限问题
-            sudo docker compose up -d --build server
+            # 验证代码版本
+            echo "当前代码版本："
+            git log -1 --oneline
+            
+            echo "=== 3. 构建并启动服务 ==="
+            # 使用 --no-cache 强制完全重新构建
+            sudo docker compose build --no-cache server
+            
+            # 启动服务
+            sudo docker compose up -d server
+            
+            echo "=== 4. 等待服务启动 ==="
+            # 等待容器启动
+            sleep 15
+            
+            echo "=== 5. 验证部署 ==="
+            # 检查容器是否运行
+            if sudo docker compose ps | grep -q "ptmj-server.*Up"; then
+              echo "✅ 容器运行正常"
+            else
+              echo "❌ 容器未正常运行"
+              sudo docker compose logs server
+              exit 1
+            fi
+            
+            # 检查应用是否响应（可选，如果有健康检查端点）
+            echo "容器日志："
+            sudo docker compose logs --tail=30 server
+            
+            echo "=== ✅ 部署完成 ==="
