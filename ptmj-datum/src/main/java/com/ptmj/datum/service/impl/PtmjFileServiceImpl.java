@@ -30,6 +30,7 @@ import jakarta.annotation.PreDestroy;
 import com.ptmj.datum.domain.PtmjFile;
 import com.ptmj.datum.domain.vo.FileTreeVo;
 import com.ptmj.datum.domain.vo.SubjectSuggestionVo;
+import com.ptmj.datum.domain.vo.SchoolSuggestionVo;
 import com.ptmj.datum.mapper.PtmjFileMapper;
 import com.ptmj.datum.service.IPtmjFileService;
 import com.ptmj.datum.service.IPtmjUserService;
@@ -212,8 +213,43 @@ public class PtmjFileServiceImpl implements IPtmjFileService
     }
 
     /**
+     * 获取学校联想推荐列表
+     *
+     * @param keyword 模糊搜索关键字
+     * @param limit 返回条数
+     * @return 学校推荐集合
+     */
+    @Override
+    public List<SchoolSuggestionVo> getSchoolSuggestions(String keyword, Integer limit)
+    {
+        int safeLimit = (limit == null || limit <= 0) ? 10 : Math.min(limit, 20);
+        String safeKeyword = keyword == null ? null : keyword.trim();
+        if (safeKeyword != null && safeKeyword.isEmpty())
+        {
+            safeKeyword = null;
+        }
+        return ptmjFileMapper.selectSchoolSuggestions(safeKeyword, safeLimit);
+    }
+
+    /**
+     * 检查学校名称是否已存在
+     *
+     * @param schoolName 学校名称
+     * @return 存在返回true，否则返回false
+     */
+    @Override
+    public boolean checkSchoolNameExists(String schoolName)
+    {
+        if (schoolName == null || schoolName.trim().isEmpty())
+        {
+            return false;
+        }
+        return ptmjFileMapper.checkSchoolNameExists(schoolName.trim());
+    }
+
+    /**
      * @author Lzj
-     * 获取按 科目 -> 类型 -> 年份 -> [自定义目录] -> 聚合成的文件树
+     * 获取按 科目 -> 学校 -> 类型 -> 年份 -> [自定义目录] -> 聚合成的文件树
      *
      * @param ptmjFile 过滤条件（可选）
      * @return 文件树集合
@@ -229,14 +265,16 @@ public class PtmjFileServiceImpl implements IPtmjFileService
         List<FileTreeVo> rootTree = new ArrayList<>();
 
         for (PtmjFile file : fileList) {
-            // 解析前三层基础路径
+            // 解析前四层基础路径
             String subject = (file.getFileSubject() != null && !file.getFileSubject().isEmpty()) ? file.getFileSubject() : "不填科目的←_←";
+            String school = (file.getFileSchool() != null && !file.getFileSchool().isEmpty()) ? file.getFileSchool() : "不填学校的←_←";
             String typeName = typeMap.getOrDefault(file.getFileType() != null ? file.getFileType() : -1L, "不填类型的→_→");
             String year = (file.getFileYear() != null && file.getFileYear() >= minYear && file.getFileYear() <= LocalDate.now().getYear()) ? String.valueOf(file.getFileYear()) : String.valueOf(getDefaultYear());
 
             // 组装所有目录层级
             List<String> pathParts = new ArrayList<>();
             pathParts.add(subject);
+            pathParts.add(school);
             pathParts.add(typeName);
             pathParts.add(year);
 
@@ -395,15 +433,16 @@ public class PtmjFileServiceImpl implements IPtmjFileService
         }
 
         Map<Long, String> typeMap = this.getTypeMap();
-        // 构建存储路径: file_type/file_subject/file_name
-        String typePath = typeMap.get(ptmjFile.getFileType()) != null ? sanitizePath(typeMap.get(ptmjFile.getFileType())) : sanitizePath(defaultType);
+        // 构建存储路径: file_subject/file_school/file_type/file_year/
         String subjectPath = (ptmjFile.getFileSubject() != null && !ptmjFile.getFileSubject().isEmpty()) ? sanitizePath(ptmjFile.getFileSubject()) : sanitizePath(defaultSubject);
+        String schoolPath = (ptmjFile.getFileSchool() != null && !ptmjFile.getFileSchool().isEmpty()) ? sanitizePath(ptmjFile.getFileSchool()) : "齐鲁工业大学";
+        String typePath = typeMap.get(ptmjFile.getFileType()) != null ? sanitizePath(typeMap.get(ptmjFile.getFileType())) : sanitizePath(defaultType);
         Long yearPath = (ptmjFile.getFileYear() != null && ptmjFile.getFileYear() >= minYear && ptmjFile.getFileYear() <= LocalDate.now().getYear()) ? ptmjFile.getFileYear() : getDefaultYear();
         
         // 处理文件夹相对路径 (复用 remark 字段)
         String folderPath = (ptmjFile.getRemark() != null && !ptmjFile.getRemark().trim().isEmpty()) 
-                ? ptmjFile.getRemark().trim() 
-                : "";
+            ? ptmjFile.getRemark().trim() 
+            : "";
         
         // 预处理 folderPath，只允许 / 作为分隔符，其他非法字符替换为 _
         if (!folderPath.isEmpty()) {
@@ -418,7 +457,7 @@ public class PtmjFileServiceImpl implements IPtmjFileService
             folderPath = sb.toString();
         }
         
-        String objectName = subjectPath + "/" + typePath + "/" + yearPath + "/";
+        String objectName = subjectPath + "/" + schoolPath + "/" + typePath + "/" + yearPath + "/";
         if (!folderPath.isEmpty()) {
             objectName += folderPath + "/";
         }

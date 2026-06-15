@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 
 import com.ptmj.datum.domain.PtmjFile;
 import com.ptmj.datum.domain.vo.SubjectSuggestionVo;
+import com.ptmj.datum.domain.vo.SchoolSuggestionVo;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -41,6 +42,23 @@ public interface PtmjFileMapper
      * @return 学科推荐集合
      */
     public List<SubjectSuggestionVo> selectSubjectSuggestions(@Param("keyword") String keyword, @Param("limit") Integer limit);
+
+    /**
+     * 查询学校联想推荐列表
+     *
+     * @param keyword 模糊搜索关键字
+     * @param limit 返回条数
+     * @return 学校推荐集合
+     */
+    public List<SchoolSuggestionVo> selectSchoolSuggestions(@Param("keyword") String keyword, @Param("limit") Integer limit);
+
+    /**
+     * 检查学校名称是否已存在
+     *
+     * @param schoolName 学校名称
+     * @return 存在返回true，否则返回false
+     */
+    public boolean checkSchoolNameExists(@Param("schoolName") String schoolName);
 
     /**
      * 新增试卷文件
