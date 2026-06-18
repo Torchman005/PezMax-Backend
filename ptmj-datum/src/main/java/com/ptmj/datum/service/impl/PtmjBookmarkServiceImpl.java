@@ -137,11 +137,16 @@ public class PtmjBookmarkServiceImpl implements IPtmjBookmarkService
         {
             throw new ServiceException("书签不存在");
         }
-        checkBookmarkOwner(exists);
+        // 管理员审核时可跳过归属校验，且保留原书签所属用户不变
+        if (!SecurityUtils.isAdmin())
+        {
+            checkBookmarkOwner(exists);
+        }
 
         PtmjBookmark updateEntity = new PtmjBookmark();
         updateEntity.setId(ptmjBookmark.getId());
-        updateEntity.setUserId(SecurityUtils.getUserId());
+        // 管理员审核时不改变书签所属用户
+        updateEntity.setUserId(SecurityUtils.isAdmin() ? exists.getUserId() : SecurityUtils.getUserId());
         updateEntity.setUrl(ptmjBookmark.getUrl());
         updateEntity.setTitle(ptmjBookmark.getTitle().trim());
         updateEntity.setSubject(ptmjBookmark.getSubject());
