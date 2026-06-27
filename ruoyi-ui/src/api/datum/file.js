@@ -54,6 +54,14 @@ export function updateFile(data) {
     })
 }
 
+// 按上传用户ID批量通过未审核文件
+export function approvePendingByUserId(userId) {
+    return request({
+        url: '/datum/file/approvePendingByUser/' + userId,
+        method: 'put'
+    })
+}
+
 // 删除试卷文件
 export function delFile(fileId) {
     return request({

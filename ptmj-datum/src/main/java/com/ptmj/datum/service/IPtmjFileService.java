@@ -101,6 +101,15 @@ public interface IPtmjFileService
     public int updatePtmjFile(PtmjFile ptmjFile);
 
     /**
+     * 按上传用户ID批量通过未审核文件
+     *
+     * @param userId 上传用户ID
+     * @param reviewer 审核人
+     * @return 更新数量
+     */
+    public int approvePendingFilesByUserId(Long userId, String reviewer);
+
+    /**
      * 批量删除试卷文件
      *
      * @param fileIds 需要删除的试卷文件主键集合

@@ -159,6 +159,17 @@
         where file_id = #{fileId}
     </update>
 
+    <update id="approvePendingFilesByUserId">
+        update ptmj_file
+        set file_status = 1,
+            reviewer = #{reviewer},
+            update_by = #{reviewer},
+            update_time = #{updateTime}
+        where user_id = #{userId}
+          and file_status = 0
+          and (del_flag is null or del_flag = 0)
+    </update>
+
     <delete id="deletePtmjFileByFileId" parameterType="Long">
         delete from ptmj_file where file_id = #{fileId}
     </delete>

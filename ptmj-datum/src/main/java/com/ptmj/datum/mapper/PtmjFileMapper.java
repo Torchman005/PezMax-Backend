@@ -77,6 +77,18 @@ public interface PtmjFileMapper
     public int updatePtmjFile(PtmjFile ptmjFile);
 
     /**
+     * 按上传用户ID批量通过未审核文件
+     *
+     * @param userId 上传用户ID
+     * @param reviewer 审核人
+     * @param updateTime 更新时间
+     * @return 更新数量
+     */
+    public int approvePendingFilesByUserId(@Param("userId") Long userId,
+                                           @Param("reviewer") String reviewer,
+                                           @Param("updateTime") java.util.Date updateTime);
+
+    /**
      * 删除试卷文件
      *
      * @param fileId 试卷文件主键

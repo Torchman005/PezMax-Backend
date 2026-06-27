@@ -226,6 +226,23 @@ public class PtmjFileController extends BaseController
     }
 
     /**
+     * 按上传用户ID一键通过该用户未审核文件
+     */
+//    @PreAuthorize("@ss.hasPermi('datum:file:edit')")
+    @Log(title = "试卷文件审核", businessType = BusinessType.UPDATE)
+    @PutMapping("/approvePendingByUser/{userId}")
+    public AjaxResult approvePendingByUser(@PathVariable("userId") Long userId)
+    {
+        if (userId == null)
+        {
+            return error("上传用户ID不能为空");
+        }
+        String reviewer = String.valueOf(getUserId());
+        int rows = ptmjFileService.approvePendingFilesByUserId(userId, reviewer);
+        return success("已通过该用户未审核文件 " + rows + " 个").put("count", rows);
+    }
+
+    /**
      * 删除试卷文件
      */
 //    @PreAuthorize("@ss.hasPermi('datum:file:remove')")

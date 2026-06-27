@@ -550,6 +550,24 @@ public class PtmjFileServiceImpl implements IPtmjFileService
     }
 
     /**
+     * 按上传用户ID批量通过未审核文件
+     *
+     * @param userId 上传用户ID
+     * @param reviewer 审核人
+     * @return 更新数量
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int approvePendingFilesByUserId(Long userId, String reviewer)
+    {
+        int rows = ptmjFileMapper.approvePendingFilesByUserId(userId, reviewer, DateUtils.getNowDate());
+        if (rows > 0) {
+            ptmjFileRankCacheService.clearRankCache();
+        }
+        return rows;
+    }
+
+    /**
      * 批量删除试卷文件
      *
      * @param fileIds 需要删除的试卷文件主键

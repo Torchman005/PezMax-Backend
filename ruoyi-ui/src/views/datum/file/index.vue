@@ -17,6 +17,14 @@
             @keyup.enter="handleQuery"
         />
       </el-form-item>
+      <el-form-item v-if="reviewMode" label="上传者ID" prop="userId">
+        <el-input
+            v-model="queryParams.userId"
+            placeholder="请输入上传者ID"
+            clearable
+            @keyup.enter="handleQuery"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -69,6 +77,15 @@
           icon="Check"
           @click="toggleReviewMode"
         >{{ reviewMode ? '退出审核' : '审核' }}</el-button>
+      </el-col>
+      <el-col v-if="reviewMode" :span="1.5">
+        <el-button
+          type="success"
+          plain
+          icon="Finished"
+          :disabled="!queryParams.userId"
+          @click="handleApproveUserPending"
+        >通过该用户全部未审核</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -227,7 +244,7 @@
 </template>
 
 <script setup name="File">
-import { listFile, getFile, delFile, addFile, updateFile, uploadDatumFile } from "@/api/datum/file"
+import { listFile, getFile, delFile, addFile, updateFile, uploadDatumFile, approvePendingByUserId } from "@/api/datum/file"
 import useUserStore from "@/store/modules/user"
 import { rewriteMinioUrl } from "@/utils/validate"
 
@@ -278,6 +295,8 @@ const data = reactive({
     pageSize: 10,
     fileId: null,
     fileName: null,
+    userId: null,
+    fileStatus: null,
   },
   rules: {
     fileName: [
@@ -350,12 +369,8 @@ function fileTypeTagType(type) {
 function getList() {
   loading.value = true
   const q = { ...queryParams.value }
-  if (q.fileId === "" || q.fileId === undefined) {
-    q.fileId = null
-  } else if (q.fileId != null) {
-    const idNum = Number(q.fileId)
-    q.fileId = Number.isNaN(idNum) ? null : idNum
-  }
+  normalizeIdQuery(q, "fileId")
+  normalizeIdQuery(q, "userId")
   return listFile(q).then(response => {
     fileList.value = response.rows
     total.value = response.total
@@ -367,6 +382,18 @@ function getList() {
   }).finally(() => {
     loading.value = false
   })
+}
+
+function normalizeIdQuery(query, field) {
+  if (typeof query[field] === "string") {
+    query[field] = query[field].trim()
+  }
+  if (query[field] === "" || query[field] === undefined) {
+    query[field] = null
+  } else if (query[field] != null) {
+    const idNum = Number(query[field])
+    query[field] = Number.isInteger(idNum) && idNum > 0 ? idNum : null
+  }
 }
 
 function cancel() {
@@ -523,6 +550,7 @@ function handleReviewModeChange() {
     queryParams.value.fileStatus = 0
   } else {
     queryParams.value.fileStatus = null
+    queryParams.value.userId = null
   }
   getList()
 }
@@ -530,6 +558,23 @@ function handleReviewModeChange() {
 function toggleReviewMode() {
   reviewMode.value = !reviewMode.value
   handleReviewModeChange()
+}
+
+function handleApproveUserPending() {
+  const userId = Number(String(queryParams.value.userId || "").trim())
+  if (!Number.isInteger(userId) || userId <= 0) {
+    proxy.$modal.msgWarning("请输入有效的上传者ID")
+    return
+  }
+  proxy.$modal.confirm(`是否确认通过上传者ID为 "${userId}" 的全部未审核文件？`).then(() => {
+    return approvePendingByUserId(userId)
+  }).then(response => {
+    const count = response.count ?? response.data ?? 0
+    proxy.$modal.msgSuccess(`已通过 ${count} 个文件`)
+    queryParams.value.fileStatus = 0
+    queryParams.value.pageNum = 1
+    getList()
+  }).catch(() => {})
 }
 
 const IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico']
