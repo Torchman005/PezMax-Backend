@@ -3,6 +3,7 @@ package com.ruoyi.system.service.impl;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ruoyi.common.utils.html.RichTextSanitizer;
 import com.ruoyi.system.domain.SysNotice;
 import com.ruoyi.system.mapper.SysNoticeMapper;
 import com.ruoyi.system.service.ISysNoticeService;
@@ -27,7 +28,7 @@ public class SysNoticeServiceImpl implements ISysNoticeService
     @Override
     public SysNotice selectNoticeById(Long noticeId)
     {
-        return noticeMapper.selectNoticeById(noticeId);
+        return sanitizeNotice(noticeMapper.selectNoticeById(noticeId));
     }
 
     /**
@@ -39,7 +40,9 @@ public class SysNoticeServiceImpl implements ISysNoticeService
     @Override
     public List<SysNotice> selectNoticeList(SysNotice notice)
     {
-        return noticeMapper.selectNoticeList(notice);
+        List<SysNotice> list = noticeMapper.selectNoticeList(notice);
+        list.forEach(this::sanitizeNotice);
+        return list;
     }
 
     /**
@@ -51,6 +54,7 @@ public class SysNoticeServiceImpl implements ISysNoticeService
     @Override
     public int insertNotice(SysNotice notice)
     {
+        sanitizeNotice(notice);
         return noticeMapper.insertNotice(notice);
     }
 
@@ -63,6 +67,7 @@ public class SysNoticeServiceImpl implements ISysNoticeService
     @Override
     public int updateNotice(SysNotice notice)
     {
+        sanitizeNotice(notice);
         return noticeMapper.updateNotice(notice);
     }
 
@@ -88,5 +93,14 @@ public class SysNoticeServiceImpl implements ISysNoticeService
     public int deleteNoticeByIds(Long[] noticeIds)
     {
         return noticeMapper.deleteNoticeByIds(noticeIds);
+    }
+
+    private SysNotice sanitizeNotice(SysNotice notice)
+    {
+        if (notice != null)
+        {
+            notice.setNoticeContent(RichTextSanitizer.sanitize(notice.getNoticeContent()));
+        }
+        return notice;
     }
 }

@@ -3,6 +3,7 @@ package com.ruoyi.system.service.impl;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ruoyi.common.utils.html.RichTextSanitizer;
 import com.ruoyi.system.domain.SysNoticeRead;
 import com.ruoyi.system.domain.SysNotice;
 import com.ruoyi.system.mapper.SysNoticeReadMapper;
@@ -46,7 +47,9 @@ public class SysNoticeReadServiceImpl implements ISysNoticeReadService
     @Override
     public List<SysNotice> selectNoticeListWithReadStatus(Long userId, int limit)
     {
-        return noticeReadMapper.selectNoticeListWithReadStatus(userId, limit);
+        List<SysNotice> list = noticeReadMapper.selectNoticeListWithReadStatus(userId, limit);
+        list.forEach(notice -> notice.setNoticeContent(RichTextSanitizer.sanitize(notice.getNoticeContent())));
+        return list;
     }
 
     /**

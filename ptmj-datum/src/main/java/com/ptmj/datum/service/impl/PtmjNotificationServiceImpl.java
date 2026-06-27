@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.html.RichTextSanitizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +38,7 @@ public class PtmjNotificationServiceImpl implements IPtmjNotificationService
     @Override
     public PtmjNotification selectPtmjNotificationByNotifyId(Long notifyId)
     {
-        return ptmjNotificationMapper.selectPtmjNotificationByNotifyId(notifyId);
+        return sanitizeNotification(ptmjNotificationMapper.selectPtmjNotificationByNotifyId(notifyId));
     }
 
     /**
@@ -49,7 +50,9 @@ public class PtmjNotificationServiceImpl implements IPtmjNotificationService
     @Override
     public List<PtmjNotification> selectPtmjNotificationList(PtmjNotification ptmjNotification)
     {
-        return ptmjNotificationMapper.selectPtmjNotificationList(ptmjNotification);
+        List<PtmjNotification> list = ptmjNotificationMapper.selectPtmjNotificationList(ptmjNotification);
+        list.forEach(this::sanitizeNotification);
+        return list;
     }
 
     /**
@@ -61,6 +64,7 @@ public class PtmjNotificationServiceImpl implements IPtmjNotificationService
     @Override
     public int insertPtmjNotification(PtmjNotification ptmjNotification)
     {
+        sanitizeNotification(ptmjNotification);
         Long materialId = ptmjNotification.getMaterialId();
         if (materialId != null)
         {
@@ -90,6 +94,7 @@ public class PtmjNotificationServiceImpl implements IPtmjNotificationService
     @Override
     public int updatePtmjNotification(PtmjNotification ptmjNotification)
     {
+        sanitizeNotification(ptmjNotification);
         ptmjNotification.setUpdateTime(DateUtils.getNowDate());
         return ptmjNotificationMapper.updatePtmjNotification(ptmjNotification);
     }
@@ -169,6 +174,7 @@ public class PtmjNotificationServiceImpl implements IPtmjNotificationService
                     }
                 })
                 .sorted(Comparator.comparing(PtmjNotification::getSort).reversed()) // 按优先级排序
+                .map(this::sanitizeNotification)
                 .collect(Collectors.toList());
 
     }
@@ -189,8 +195,18 @@ public class PtmjNotificationServiceImpl implements IPtmjNotificationService
                             (n.getPublishStart()==null||now.after(n.getPublishStart()))&&
                             (n.getPublishEnd()==null||now.before(n.getPublishEnd()));
                 })
+                .map(this::sanitizeNotification)
                 .collect(Collectors.toList());
 
+    }
+
+    private PtmjNotification sanitizeNotification(PtmjNotification notification)
+    {
+        if (notification != null)
+        {
+            notification.setContent(RichTextSanitizer.sanitize(notification.getContent()));
+        }
+        return notification;
     }
 
 }
